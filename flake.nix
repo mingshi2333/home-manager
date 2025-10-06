@@ -23,7 +23,8 @@
       # Home Manager Configuration
       homeConfigurations."${username}" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
-        extraSpecialArgs = { }; # 可选，用于传递额外参数
+        extraSpecialArgs = {
+        }; # 可选，用于传递额外参数
         modules = [
           # 在这里引入您的 home.nix 文件
           ./home.nix

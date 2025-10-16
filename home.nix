@@ -11,7 +11,14 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
       rm $out/bin/cursor
-      makeWrapper ${nixGLBin} $out/bin/cursor --add-flags ${pkgs.code-cursor}/bin/cursor
+      makeWrapper ${nixGLBin} $out/bin/cursor \
+        --add-flags ${pkgs.code-cursor}/bin/cursor \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx \
+        --set ELECTRON_OZONE_PLATFORM_HINT x11
     '';
   };
 
@@ -21,7 +28,13 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
       rm $out/bin/AyuGram
-      makeWrapper ${nixGLBin} $out/bin/AyuGram --add-flags ${pkgs.ayugram-desktop}/bin/AyuGram
+      makeWrapper ${nixGLBin} $out/bin/AyuGram \
+        --add-flags ${pkgs.ayugram-desktop}/bin/AyuGram \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx
     '';
   };
 
@@ -31,13 +44,54 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
       rm $out/bin/readest
-      makeWrapper ${nixGLBin} $out/bin/readest --add-flags ${pkgs.readest}/bin/readest
+      makeWrapper ${nixGLBin} $out/bin/readest \
+        --add-flags ${pkgs.readest}/bin/readest \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx
+    '';
+  };
+
+  podmanDesktopPackage = pkgs.symlinkJoin {
+    name = "podman-desktop-nixgl";
+    paths = [ pkgs.podman-desktop ];
+    buildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm $out/bin/podman-desktop
+      makeWrapper ${nixGLBin} $out/bin/podman-desktop \
+        --add-flags ${pkgs.podman-desktop}/bin/podman-desktop \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx \
+        --set ELECTRON_OZONE_PLATFORM_HINT x11
+    '';
+  };
+
+  zoteroPackageWrapped = pkgs.symlinkJoin {
+    name = "zotero-nixgl";
+    paths = [ pkgs.zotero ];
+    buildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm $out/bin/zotero
+      makeWrapper ${nixGLBin} $out/bin/zotero \
+        --add-flags ${pkgs.zotero}/bin/zotero \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx
     '';
   };
 
   cursorExec = "${cursorPackage}/bin/cursor";
   ayugramExec = "${ayugramPackage}/bin/AyuGram";
   readestExec = "${readestPackage}/bin/readest";
+  podmanDesktopExec = "${podmanDesktopPackage}/bin/podman-desktop";
+  zoteroExec = "${zoteroPackageWrapped}/bin/zotero";
 in
 {
   # Home Manager 需要知道您的基本配置
@@ -53,23 +107,19 @@ in
   home.packages = with pkgs; [
     ayugramPackage
     cursorPackage
-    fcitx5
-    fcitx5-chinese-addons
-    fcitx5-gtk
     hello
     pkgs.kdePackages.kate
     nix
     nix-du
     pdfstudioviewer
-    podman-desktop
+    podmanDesktopPackage
     qtscrcpy
     readestPackage
     vulkan-tools
     zoom-us
-    zotero
+    zoteroPackageWrapped
     nixGLPackage
     # --- 特殊包 ---
-    kdePackages.fcitx5-qt
     nsc
   ];
 
@@ -92,7 +142,12 @@ in
     XMODIFIERS = "@im=fcitx";
     SDL_IM_MODULE = "fcitx";
     INPUT_METHOD = "fcitx";
-    ELECTRON_OZONE_PLATFORM_HINT = "auto";
+    # Prefer Nix-provided gtk immodules cache and paths to avoid host /usr mismatches
+    GTK_IM_MODULE_FILE = "${config.home.homeDirectory}/.nix-profile/etc/gtk-3.0/immodules.cache";
+    GTK_PATH = "${config.home.homeDirectory}/.nix-profile/lib/gtk-3.0";
+    # Ensure KDE/Wayland sees HM-provided .desktop files in ~/.nix-profile/share
+    XDG_DATA_DIRS = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share";
+    ELECTRON_OZONE_PLATFORM_HINT = "x11";
   };
 
   xdg.configFile."environment.d/99-fcitx5.conf" = {
@@ -105,19 +160,30 @@ in
     '';
   };
 
+  # Force Electron apps to XWayland at the display-manager level (works for Wayland + X11)
+  xdg.configFile."environment.d/20-electron-x11.conf" = {
+    text = ''
+      ELECTRON_OZONE_PLATFORM_HINT=x11
+      # For Nix-wrapped Chromium/Electron apps, ensure wrappers don’t switch to Wayland
+      NIXOS_OZONE_WL=0
+    '';
+  };
+
+  # Make XDG_DATA_DIRS available early to Plasma/Wayland and systemd --user
+  xdg.configFile."environment.d/10-xdg-data-dirs.conf" = {
+    text = ''
+      XDG_DATA_DIRS=${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share
+    '';
+  };
+
   programs.zsh.initExtra = ''
-    if [ "''${XDG_SESSION_TYPE:-}" = "wayland" ]; then
-      export XMODIFIERS="@im=fcitx"
-      export GTK_IM_MODULE=fcitx
-      export QT_IM_MODULE=fcitx
-      export SDL_IM_MODULE=fcitx
-      export INPUT_METHOD=fcitx
-      export ELECTRON_OZONE_PLATFORM_HINT=wayland
-    elif [ "''${XDG_SESSION_TYPE:-}" = "x11" ]; then
-      export ELECTRON_OZONE_PLATFORM_HINT=x11
-    else
-      export ELECTRON_OZONE_PLATFORM_HINT=auto
-    fi
+    export XMODIFIERS="@im=fcitx"
+    export GTK_IM_MODULE=fcitx
+    export QT_IM_MODULE=fcitx
+    export SDL_IM_MODULE=fcitx
+    export INPUT_METHOD=fcitx
+    # Force all Electron apps to use XWayland (X11)
+    export ELECTRON_OZONE_PLATFORM_HINT=x11
   '';
 
   programs.zsh.shellAliases = {
@@ -125,6 +191,8 @@ in
     telegram = ayugramExec;
     AyuGram = ayugramExec;
     readest = readestExec;
+    podman-desktop = podmanDesktopExec;
+    zotero = zoteroExec;
   };
 
   # nixGL 包装后的启动脚本，确保命令行和 .desktop 都能加载系统的 GPU 驱动
@@ -152,7 +220,34 @@ in
     executable = true;
   };
 
+  home.file.".local/bin/podman-desktop" = {
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      exec ${podmanDesktopExec} "$@"
+    '';
+    executable = true;
+  };
+
+  home.file.".local/bin/zotero" = {
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      exec ${zoteroExec} "$@"
+    '';
+    executable = true;
+  };
+
   xdg.enable = true;
+
+  # Autostart and configure fcitx5 via Home Manager inputMethod module
+  i18n.inputMethod = {
+    enable = true;
+    type = "fcitx5";
+    fcitx5.addons = with pkgs; [
+      fcitx5-gtk
+      fcitx5-chinese-addons
+      kdePackages.fcitx5-qt
+    ];
+  };
 
   xdg.desktopEntries.cursor = {
     name = "Cursor";
@@ -191,6 +286,26 @@ in
       "application/vnd.comicbook+zip"
       "application/pdf"
     ];
+  };
+
+  xdg.desktopEntries.podman_desktop = {
+    name = "Podman Desktop (nixGL)";
+    exec = podmanDesktopExec;
+    terminal = false;
+    type = "Application";
+    comment = "Podman Desktop (nixGL, X11)";
+    categories = [ "Development" "Utility" "X-Virtualization" ];
+    icon = "podman-desktop";
+  };
+
+  xdg.desktopEntries.zotero = {
+    name = "Zotero (nixGL)";
+    exec = zoteroExec;
+    terminal = false;
+    type = "Application";
+    comment = "Zotero (nixGL)";
+    categories = [ "Office" "Utility" ];
+    icon = "zotero";
   };
 
   # 让 Home Manager 管理它自己

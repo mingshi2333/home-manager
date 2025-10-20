@@ -143,6 +143,9 @@ in
     XMODIFIERS = "@im=fcitx";
     SDL_IM_MODULE = "fcitx";
     INPUT_METHOD = "fcitx";
+    # Make Nix xdg-open use system portal (fixes opening links/PDFs)
+    NIXOS_XDG_OPEN_USE_PORTAL = "1";
+    GTK_USE_PORTAL = "1";
     # Prefer Nix-provided gtk immodules cache and paths to avoid host /usr mismatches
     GTK_IM_MODULE_FILE = "${config.home.homeDirectory}/.nix-profile/etc/gtk-3.0/immodules.cache";
     GTK_PATH = "${config.home.homeDirectory}/.nix-profile/lib/gtk-3.0";
@@ -238,6 +241,27 @@ in
   };
 
   xdg.enable = true;
+
+  # Mirror system default apps for links/PDF via Home Manager
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "x-scheme-handler/http" = [ "microsoft-edge-beta.desktop" ];
+      "x-scheme-handler/https" = [ "microsoft-edge-beta.desktop" ];
+      "application/pdf" = [ "microsoft-edge-beta.desktop" ];
+    };
+  };
+
+  xdg.configFile."mimeapps.list".force = true;
+  xdg.dataFile."applications/mimeapps.list".force = true;
+
+  # Ensure xdg-open inside Nix uses desktop portal on Fedora/KDE/GNOME
+  xdg.configFile."environment.d/30-xdg-portal.conf" = {
+    text = ''
+      NIXOS_XDG_OPEN_USE_PORTAL=1
+      GTK_USE_PORTAL=1
+    '';
+  };
 
   # Autostart and configure fcitx5 via Home Manager inputMethod module
   i18n.inputMethod = {

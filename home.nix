@@ -107,7 +107,7 @@ in
   home.packages = with pkgs; [
     ayugramPackage
     cursorPackage
-    hello
+    onedrivegui
     pkgs.kdePackages.kate
     nix
     nix-du
@@ -115,6 +115,7 @@ in
     podmanDesktopPackage
     qtscrcpy
     readestPackage
+    xdg-utils
     vulkan-tools
     zoom-us
     zoteroPackageWrapped

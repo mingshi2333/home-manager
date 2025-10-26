@@ -22,19 +22,41 @@ let
     '';
   };
 
-  # AyuGram 暂时禁用，因为:
-  # 1. 官方不提供 Linux 预编译二进制
-  # 2. nixpkgs 中的包因 Qt::CorePrivate 依赖问题无法构建
-  # 
-  # 推荐的安装方式:
-  # 方式 1: 使用 Flatpak (推荐)
-  #   flatpak install flathub io.github.ayugram.ayugram
-  #   或添加 flathub: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  #
-  # 方式 2: 使用官方 Telegram Desktop (nixpkgs 中可用)
-  #   home.packages = with pkgs; [ telegram-desktop ];
-  #
-  # 方式 3: 等待上游修复后重新启用 pkgs.ayugram-desktop
+  # AyuGram - 使用旧版 nixpkgs 避免 Qt6 构建问题
+  # 当前 nixpkgs unstable 中的 ayugram-desktop 因 Qt::CorePrivate 依赖无法构建
+  # 这里使用一个能够构建的旧版本
+  oldNixpkgs = import (builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/nixos-24.05.tar.gz";
+    sha256 = "0zydsqiaz8qi4zd63zsb2gij2p614cgkcaisnk11wjy3nmiq0x1s";
+  }) { 
+    system = pkgs.system;
+    config = { allowUnfree = true; };
+  };
+
+  ayugramPackage = pkgs.symlinkJoin {
+    name = "ayugram-desktop-nixgl";
+    # 尝试使用旧版 nixpkgs 的 ayugram-desktop
+    paths = [ (oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop) ];
+    buildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      # 如果是 telegram-desktop 则跳过包装
+      if [ -f ${oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop}/bin/AyuGram ]; then
+        rm $out/bin/AyuGram 2>/dev/null || true
+        makeWrapper ${nixGLBin} $out/bin/AyuGram \
+          --add-flags ${oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop}/bin/AyuGram \
+          --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+          --set GTK_IM_MODULE fcitx \
+          --set QT_IM_MODULE fcitx \
+          --set XMODIFIERS "@im=fcitx" \
+          --set SDL_IM_MODULE fcitx
+      else
+        # 如果没有 AyuGram，使用 telegram-desktop 作为后备
+        rm $out/bin/telegram-desktop 2>/dev/null || true
+        ln -sf ${oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop}/bin/telegram-desktop $out/bin/telegram-desktop
+        ln -sf $out/bin/telegram-desktop $out/bin/AyuGram
+      fi
+    '';
+  };
 
   readestPackage = pkgs.symlinkJoin {
     name = "readest-nixgl";
@@ -105,6 +127,7 @@ let
   #   ]);
 
   cursorExec = "${cursorPackage}/bin/cursor";
+  ayugramExec = "${ayugramPackage}/bin/AyuGram";
   readestExec = "${readestPackage}/bin/readest";
   podmanDesktopExec = "${podmanDesktopPackage}/bin/podman-desktop";
   zoteroExec = "${zoteroPackageWrapped}/bin/zotero";
@@ -129,7 +152,7 @@ in
 
   # 要安装的软件包
   home.packages = with pkgs; [
-    # ayugramPackage  # 暂时禁用，等待上游修复 Qt::CorePrivate 构建错误
+    ayugramPackage
     cursorPackage
     onedrivegui
     pkgs.kdePackages.kate
@@ -216,8 +239,8 @@ in
 
   programs.zsh.shellAliases = {
     cursor = cursorExec;
-    # telegram = ayugramExec;
-    # AyuGram = ayugramExec;
+    telegram = ayugramExec;
+    AyuGram = ayugramExec;
     readest = readestExec;
     podman-desktop = podmanDesktopExec;
     zotero = zoteroExec;
@@ -232,13 +255,13 @@ in
     executable = true;
   };
 
-  # home.file.".local/bin/AyuGram" = {
-  #   text = ''
-  #     #!${pkgs.bash}/bin/bash
-  #     exec ${ayugramExec} "$@"
-  #   '';
-  #   executable = true;
-  # };
+  home.file.".local/bin/AyuGram" = {
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      exec ${ayugramExec} "$@"
+    '';
+    executable = true;
+  };
 
   home.file.".local/bin/readest" = {
     text = ''
@@ -309,15 +332,15 @@ in
     icon = "cursor";
   };
 
-  # xdg.desktopEntries.ayugram = {
-  #   name = "Ayugram";
-  #   exec = ayugramExec;
-  #   terminal = false;
-  #   type = "Application";
-  #   comment = "Ayugram Desktop (nixGL)";
-  #   categories = [ "Network" "InstantMessaging" ];
-  #   icon = "ayugram-desktop";
-  # };
+  xdg.desktopEntries.ayugram = {
+    name = "Ayugram";
+    exec = ayugramExec;
+    terminal = false;
+    type = "Application";
+    comment = "Ayugram Desktop (nixGL)";
+    categories = [ "Network" "InstantMessaging" ];
+    icon = "ayugram-desktop";
+  };
 
   xdg.desktopEntries."readest-nixgl" = {
     name = "Readest (nixGL)";

@@ -22,39 +22,23 @@ let
     '';
   };
 
-  # AyuGram - 使用旧版 nixpkgs 避免 Qt6 构建问题
-  # 当前 nixpkgs unstable 中的 ayugram-desktop 因 Qt::CorePrivate 依赖无法构建
-  # 这里使用一个能够构建的旧版本
-  oldNixpkgs = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/nixos-24.05.tar.gz";
-    sha256 = "0zydsqiaz8qi4zd63zsb2gij2p614cgkcaisnk11wjy3nmiq0x1s";
-  }) { 
-    system = pkgs.system;
-    config = { allowUnfree = true; };
-  };
-
-  ayugramPackage = pkgs.symlinkJoin {
-    name = "ayugram-desktop-nixgl";
-    # 尝试使用旧版 nixpkgs 的 ayugram-desktop
-    paths = [ (oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop) ];
+  # Telegram Desktop with nixGL wrapper
+  telegramPackage = pkgs.symlinkJoin {
+    name = "telegram-desktop-nixgl";
+    paths = [ pkgs.telegram-desktop ];
     buildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
-      # 如果是 telegram-desktop 则跳过包装
-      if [ -f ${oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop}/bin/AyuGram ]; then
-        rm $out/bin/AyuGram 2>/dev/null || true
-        makeWrapper ${nixGLBin} $out/bin/AyuGram \
-          --add-flags ${oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop}/bin/AyuGram \
-          --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
-          --set GTK_IM_MODULE fcitx \
-          --set QT_IM_MODULE fcitx \
-          --set XMODIFIERS "@im=fcitx" \
-          --set SDL_IM_MODULE fcitx
-      else
-        # 如果没有 AyuGram，使用 telegram-desktop 作为后备
-        rm $out/bin/telegram-desktop 2>/dev/null || true
-        ln -sf ${oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop}/bin/telegram-desktop $out/bin/telegram-desktop
-        ln -sf $out/bin/telegram-desktop $out/bin/AyuGram
-      fi
+      # telegram-desktop 的可执行文件是 Telegram
+      rm $out/bin/Telegram 2>/dev/null || true
+      makeWrapper ${nixGLBin} $out/bin/telegram-desktop \
+        --add-flags ${pkgs.telegram-desktop}/bin/Telegram \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx
+      # 创建别名
+      ln -sf $out/bin/telegram-desktop $out/bin/Telegram
     '';
   };
 
@@ -127,7 +111,7 @@ let
   #   ]);
 
   cursorExec = "${cursorPackage}/bin/cursor";
-  ayugramExec = "${ayugramPackage}/bin/AyuGram";
+  telegramExec = "${telegramPackage}/bin/telegram-desktop";
   readestExec = "${readestPackage}/bin/readest";
   podmanDesktopExec = "${podmanDesktopPackage}/bin/podman-desktop";
   zoteroExec = "${zoteroPackageWrapped}/bin/zotero";
@@ -152,7 +136,7 @@ in
 
   # 要安装的软件包
   home.packages = with pkgs; [
-    ayugramPackage
+    telegramPackage
     cursorPackage
     onedrivegui
     pkgs.kdePackages.kate
@@ -239,8 +223,7 @@ in
 
   programs.zsh.shellAliases = {
     cursor = cursorExec;
-    telegram = ayugramExec;
-    AyuGram = ayugramExec;
+    telegram = telegramExec;
     readest = readestExec;
     podman-desktop = podmanDesktopExec;
     zotero = zoteroExec;
@@ -255,10 +238,10 @@ in
     executable = true;
   };
 
-  home.file.".local/bin/AyuGram" = {
+  home.file.".local/bin/telegram" = {
     text = ''
       #!${pkgs.bash}/bin/bash
-      exec ${ayugramExec} "$@"
+      exec ${telegramExec} "$@"
     '';
     executable = true;
   };
@@ -332,14 +315,14 @@ in
     icon = "cursor";
   };
 
-  xdg.desktopEntries.ayugram = {
-    name = "Ayugram";
-    exec = ayugramExec;
+  xdg.desktopEntries.telegram = {
+    name = "Telegram Desktop";
+    exec = telegramExec;
     terminal = false;
     type = "Application";
-    comment = "Ayugram Desktop (nixGL)";
+    comment = "Telegram Desktop (nixGL)";
     categories = [ "Network" "InstantMessaging" ];
-    icon = "ayugram-desktop";
+    icon = "telegram";
   };
 
   xdg.desktopEntries."readest-nixgl" = {

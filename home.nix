@@ -22,21 +22,19 @@ let
     '';
   };
 
-  # ayugramPackage = pkgs.symlinkJoin {
-  #   name = "ayugram-desktop-nixgl";
-  #   paths = [ pkgs.ayugram-desktop ];
-  #   buildInputs = [ pkgs.makeWrapper ];
-  #   postBuild = ''
-  #     rm $out/bin/AyuGram
-  #     makeWrapper ${nixGLBin} $out/bin/AyuGram \
-  #       --add-flags ${pkgs.ayugram-desktop}/bin/AyuGram \
-  #       --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
-  #       --set GTK_IM_MODULE fcitx \
-  #       --set QT_IM_MODULE fcitx \
-  #       --set XMODIFIERS "@im=fcitx" \
-  #       --set SDL_IM_MODULE fcitx
-  #   '';
-  # };
+  # AyuGram 暂时禁用，因为:
+  # 1. 官方不提供 Linux 预编译二进制
+  # 2. nixpkgs 中的包因 Qt::CorePrivate 依赖问题无法构建
+  # 
+  # 推荐的安装方式:
+  # 方式 1: 使用 Flatpak (推荐)
+  #   flatpak install flathub io.github.ayugram.ayugram
+  #   或添加 flathub: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  #
+  # 方式 2: 使用官方 Telegram Desktop (nixpkgs 中可用)
+  #   home.packages = with pkgs; [ telegram-desktop ];
+  #
+  # 方式 3: 等待上游修复后重新启用 pkgs.ayugram-desktop
 
   readestPackage = pkgs.symlinkJoin {
     name = "readest-nixgl";
@@ -107,7 +105,6 @@ let
   #   ]);
 
   cursorExec = "${cursorPackage}/bin/cursor";
-  # ayugramExec = "${ayugramPackage}/bin/AyuGram";
   readestExec = "${readestPackage}/bin/readest";
   podmanDesktopExec = "${podmanDesktopPackage}/bin/podman-desktop";
   zoteroExec = "${zoteroPackageWrapped}/bin/zotero";

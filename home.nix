@@ -22,21 +22,21 @@ let
     '';
   };
 
-  ayugramPackage = pkgs.symlinkJoin {
-    name = "ayugram-desktop-nixgl";
-    paths = [ pkgs.ayugram-desktop ];
-    buildInputs = [ pkgs.makeWrapper ];
-    postBuild = ''
-      rm $out/bin/AyuGram
-      makeWrapper ${nixGLBin} $out/bin/AyuGram \
-        --add-flags ${pkgs.ayugram-desktop}/bin/AyuGram \
-        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
-        --set GTK_IM_MODULE fcitx \
-        --set QT_IM_MODULE fcitx \
-        --set XMODIFIERS "@im=fcitx" \
-        --set SDL_IM_MODULE fcitx
-    '';
-  };
+  # ayugramPackage = pkgs.symlinkJoin {
+  #   name = "ayugram-desktop-nixgl";
+  #   paths = [ pkgs.ayugram-desktop ];
+  #   buildInputs = [ pkgs.makeWrapper ];
+  #   postBuild = ''
+  #     rm $out/bin/AyuGram
+  #     makeWrapper ${nixGLBin} $out/bin/AyuGram \
+  #       --add-flags ${pkgs.ayugram-desktop}/bin/AyuGram \
+  #       --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+  #       --set GTK_IM_MODULE fcitx \
+  #       --set QT_IM_MODULE fcitx \
+  #       --set XMODIFIERS "@im=fcitx" \
+  #       --set SDL_IM_MODULE fcitx
+  #   '';
+  # };
 
   readestPackage = pkgs.symlinkJoin {
     name = "readest-nixgl";
@@ -87,8 +87,27 @@ let
     '';
   };
 
+  # fcitxQtPatch = pkgs.writeText "fcitx5-qt6-gui-private.patch"
+  #   (builtins.concatStringsSep "\n" [
+  #     "diff --git a/qt6/CMakeLists.txt b/qt6/CMakeLists.txt"
+  #     "index 7b0c3d0..8475d2a 100644"
+  #     "--- a/qt6/CMakeLists.txt"
+  #     "+++ b/qt6/CMakeLists.txt"
+  #     "@@ -1,5 +1,8 @@"
+  #     ""
+  #     "find_package(Qt6 \${REQUIRED_QT6_VERSION} CONFIG REQUIRED Core DBus Widgets)"
+  #     "find_package(Qt6Gui \${REQUIRED_QT6_VERSION} REQUIRED Private)"
+  #     "+if(NOT TARGET Qt6::GuiPrivate)"
+  #     "+  find_package(Qt6GuiPrivate \${REQUIRED_QT6_VERSION} REQUIRED)"
+  #     "+endif()"
+  #     "if (ENABLE_QT6_WAYLAND_WORKAROUND)"
+  #     "  find_package(Qt6WaylandClient \${REQUIRED_QT6_VERSION} REQUIRED Private)"
+  #     "  find_package(Qt6WaylandGlobalPrivate \${REQUIRED_QT6_VERSION} REQUIRED)"
+  #     ""
+  #   ]);
+
   cursorExec = "${cursorPackage}/bin/cursor";
-  ayugramExec = "${ayugramPackage}/bin/AyuGram";
+  # ayugramExec = "${ayugramPackage}/bin/AyuGram";
   readestExec = "${readestPackage}/bin/readest";
   podmanDesktopExec = "${podmanDesktopPackage}/bin/podman-desktop";
   zoteroExec = "${zoteroPackageWrapped}/bin/zotero";
@@ -97,15 +116,23 @@ in
   # Home Manager 需要知道您的基本配置
   home.username = "mingshi"; # 再次替换为您的用户名
   home.homeDirectory = "/home/mingshi"; # 再次替换为您的用户名
-  
-  
-    nixpkgs.config = {
+  nixpkgs.config = {
     allowUnfree = true;
   };
 
+  # nixpkgs.overlays = [
+  #   (final: prev: {
+  #     kdePackages = prev.kdePackages.overrideScope (self: super: {
+  #       fcitx5-qt = super.fcitx5-qt.overrideAttrs (old: {
+  #         patches = (old.patches or []) ++ [ fcitxQtPatch ];
+  #       });
+  #     });
+  #   })
+  # ];
+
   # 要安装的软件包
   home.packages = with pkgs; [
-    ayugramPackage
+    # ayugramPackage  # 暂时禁用，等待上游修复 Qt::CorePrivate 构建错误
     cursorPackage
     onedrivegui
     pkgs.kdePackages.kate
@@ -192,8 +219,8 @@ in
 
   programs.zsh.shellAliases = {
     cursor = cursorExec;
-    telegram = ayugramExec;
-    AyuGram = ayugramExec;
+    # telegram = ayugramExec;
+    # AyuGram = ayugramExec;
     readest = readestExec;
     podman-desktop = podmanDesktopExec;
     zotero = zoteroExec;
@@ -208,13 +235,13 @@ in
     executable = true;
   };
 
-  home.file.".local/bin/AyuGram" = {
-    text = ''
-      #!${pkgs.bash}/bin/bash
-      exec ${ayugramExec} "$@"
-    '';
-    executable = true;
-  };
+  # home.file.".local/bin/AyuGram" = {
+  #   text = ''
+  #     #!${pkgs.bash}/bin/bash
+  #     exec ${ayugramExec} "$@"
+  #   '';
+  #   executable = true;
+  # };
 
   home.file.".local/bin/readest" = {
     text = ''
@@ -264,15 +291,16 @@ in
   };
 
   # Autostart and configure fcitx5 via Home Manager inputMethod module
-  i18n.inputMethod = {
-    enable = true;
-    type = "fcitx5";
-    fcitx5.addons = with pkgs; [
-      fcitx5-gtk
-      fcitx5-chinese-addons
-      kdePackages.fcitx5-qt
-    ];
-  };
+  # 暂时禁用，因为 fcitx5-qt6 在 nixpkgs unstable 中有构建问题
+  # 请使用系统的 fcitx5 安装
+  # i18n.inputMethod = {
+  #   enable = true;
+  #   type = "fcitx5";
+  #   fcitx5.addons = with pkgs; [
+  #     fcitx5-gtk
+  #     fcitx5-chinese-addons
+  #   ];
+  # };
 
   xdg.desktopEntries.cursor = {
     name = "Cursor";
@@ -284,15 +312,15 @@ in
     icon = "cursor";
   };
 
-  xdg.desktopEntries.ayugram = {
-    name = "Ayugram";
-    exec = ayugramExec;
-    terminal = false;
-    type = "Application";
-    comment = "Ayugram Desktop (nixGL)";
-    categories = [ "Network" "InstantMessaging" ];
-    icon = "ayugram-desktop";
-  };
+  # xdg.desktopEntries.ayugram = {
+  #   name = "Ayugram";
+  #   exec = ayugramExec;
+  #   terminal = false;
+  #   type = "Application";
+  #   comment = "Ayugram Desktop (nixGL)";
+  #   categories = [ "Network" "InstantMessaging" ];
+  #   icon = "ayugram-desktop";
+  # };
 
   xdg.desktopEntries."readest-nixgl" = {
     name = "Readest (nixGL)";

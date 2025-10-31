@@ -36,7 +36,8 @@ let
         --set GTK_IM_MODULE fcitx \
         --set QT_IM_MODULE fcitx \
         --set XMODIFIERS "@im=fcitx" \
-        --set SDL_IM_MODULE fcitx
+        --set SDL_IM_MODULE fcitx \
+        --set QT_QPA_PLATFORM xcb
       # 创建别名
       ln -sf $out/bin/telegram-desktop $out/bin/Telegram
     '';
@@ -227,6 +228,10 @@ in
     readest = readestExec;
     podman-desktop = podmanDesktopExec;
     zotero = zoteroExec;
+    # Home Manager 便捷命令
+    hms = "cd ~/.config/home-manager && home-manager switch";
+    hmu = "cd ~/.config/home-manager && nix flake update && home-manager switch";
+    hmr = "cd ~/.config/home-manager && home-manager switch --rollback";
   };
 
   # nixGL 包装后的启动脚本，确保命令行和 .desktop 都能加载系统的 GPU 驱动
@@ -363,6 +368,32 @@ in
     categories = [ "Office" "Utility" ];
     icon = "zotero";
   };
+
+  # 自动刷新 desktop files 和 KDE 缓存
+  home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["writeBoundary"] ''
+    # 复制所有 desktop 文件到 ~/.local/share/applications/
+    $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
+    
+    # 复制 home-manager 生成的 desktop 文件
+    if [ -d "$HOME/.nix-profile/share/applications" ]; then
+      $DRY_RUN_CMD ${pkgs.rsync}/bin/rsync -av --ignore-existing \
+        "$HOME/.nix-profile/share/applications/"*.desktop \
+        "$HOME/.local/share/applications/" 2>/dev/null || true
+    fi
+    
+    # 刷新 desktop database
+    if [ -x "${pkgs.desktop-file-utils}/bin/update-desktop-database" ]; then
+      $DRY_RUN_CMD ${pkgs.desktop-file-utils}/bin/update-desktop-database \
+        "$HOME/.local/share/applications" 2>/dev/null || true
+    fi
+    
+    # 刷新 KDE 缓存 (如果在 KDE 环境)
+    if command -v kbuildsycoca6 &> /dev/null; then
+      $DRY_RUN_CMD kbuildsycoca6 2>/dev/null || true
+    elif command -v kbuildsycoca5 &> /dev/null; then
+      $DRY_RUN_CMD kbuildsycoca5 2>/dev/null || true
+    fi
+  '';
 
   # 让 Home Manager 管理它自己
   programs.home-manager.enable = true;

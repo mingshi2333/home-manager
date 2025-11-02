@@ -13,12 +13,13 @@ let
       rm $out/bin/cursor
       makeWrapper ${nixGLBin} $out/bin/cursor \
         --add-flags ${pkgs.code-cursor}/bin/cursor \
+        --add-flags "--ozone-platform-hint=wayland --enable-wayland-ime" \
         --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
         --set GTK_IM_MODULE fcitx \
         --set QT_IM_MODULE fcitx \
         --set XMODIFIERS "@im=fcitx" \
         --set SDL_IM_MODULE fcitx \
-        --set ELECTRON_OZONE_PLATFORM_HINT x11
+        --set ELECTRON_OZONE_PLATFORM_HINT wayland
     '';
   };
 
@@ -51,11 +52,13 @@ let
       rm $out/bin/readest
       makeWrapper ${nixGLBin} $out/bin/readest \
         --add-flags ${pkgs.readest}/bin/readest \
+        --add-flags "--ozone-platform-hint=wayland --enable-wayland-ime" \
         --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
         --set GTK_IM_MODULE fcitx \
         --set QT_IM_MODULE fcitx \
         --set XMODIFIERS "@im=fcitx" \
-        --set SDL_IM_MODULE fcitx
+        --set SDL_IM_MODULE fcitx \
+        --set ELECTRON_OZONE_PLATFORM_HINT wayland
     '';
   };
 
@@ -67,28 +70,35 @@ let
       rm $out/bin/podman-desktop
       makeWrapper ${nixGLBin} $out/bin/podman-desktop \
         --add-flags ${pkgs.podman-desktop}/bin/podman-desktop \
+        --add-flags "--ozone-platform-hint=wayland --enable-wayland-ime" \
         --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
         --set GTK_IM_MODULE fcitx \
         --set QT_IM_MODULE fcitx \
         --set XMODIFIERS "@im=fcitx" \
         --set SDL_IM_MODULE fcitx \
-        --set ELECTRON_OZONE_PLATFORM_HINT x11
+        --set ELECTRON_OZONE_PLATFORM_HINT wayland
     '';
   };
 
   zoteroPackageWrapped = pkgs.symlinkJoin {
     name = "zotero-nixgl";
     paths = [ pkgs.zotero ];
-    buildInputs = [ pkgs.makeWrapper ];
+    buildInputs = [ pkgs.makeWrapper pkgs.gtk3.dev pkgs.fcitx5-gtk ];
     postBuild = ''
       rm $out/bin/zotero
       makeWrapper ${nixGLBin} $out/bin/zotero \
         --add-flags ${pkgs.zotero}/bin/zotero \
+        --add-flags "--ozone-platform-hint=wayland --enable-wayland-ime" \
         --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
         --set GTK_IM_MODULE fcitx \
         --set QT_IM_MODULE fcitx \
         --set XMODIFIERS "@im=fcitx" \
-        --set SDL_IM_MODULE fcitx
+        --set SDL_IM_MODULE fcitx \
+        --set GTK_IM_MODULE_FILE "$out/etc/gtk-3.0/immodules.cache"
+
+      mkdir -p $out/etc/gtk-3.0
+      GTK_PATH=${pkgs.gtk3}/lib/gtk-3.0:${pkgs.fcitx5-gtk}/lib/gtk-3.0 \
+        ${pkgs.gtk3.dev}/bin/gtk-query-immodules-3.0 > $out/etc/gtk-3.0/immodules.cache
     '';
   };
 
@@ -183,7 +193,8 @@ in
     GTK_PATH = "${config.home.homeDirectory}/.nix-profile/lib/gtk-3.0";
     # Ensure KDE/Wayland sees HM-provided .desktop files in ~/.nix-profile/share
     XDG_DATA_DIRS = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share";
-    ELECTRON_OZONE_PLATFORM_HINT = "x11";
+    ELECTRON_OZONE_PLATFORM_HINT = "wayland";
+    NIXOS_OZONE_WL = "1";
   };
 
   xdg.configFile."environment.d/99-fcitx5.conf" = {
@@ -196,12 +207,12 @@ in
     '';
   };
 
-  # Force Electron apps to XWayland at the display-manager level (works for Wayland + X11)
-  xdg.configFile."environment.d/20-electron-x11.conf" = {
+  # Default Electron apps to native Wayland with IME support
+  xdg.configFile."environment.d/20-electron-wayland.conf" = {
     text = ''
-      ELECTRON_OZONE_PLATFORM_HINT=x11
-      # For Nix-wrapped Chromium/Electron apps, ensure wrappers don’t switch to Wayland
-      NIXOS_OZONE_WL=0
+      ELECTRON_OZONE_PLATFORM_HINT=wayland
+      # Allow Nix Electron wrappers to stay on Wayland
+      NIXOS_OZONE_WL=1
     '';
   };
 
@@ -218,8 +229,9 @@ in
     export QT_IM_MODULE=fcitx
     export SDL_IM_MODULE=fcitx
     export INPUT_METHOD=fcitx
-    # Force all Electron apps to use XWayland (X11)
-    export ELECTRON_OZONE_PLATFORM_HINT=x11
+    # Default Electron apps to Wayland
+    export ELECTRON_OZONE_PLATFORM_HINT=wayland
+    export NIXOS_OZONE_WL=1
   '';
 
   programs.zsh.shellAliases = {
@@ -281,9 +293,9 @@ in
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
-      "x-scheme-handler/http" = [ "microsoft-edge-beta.desktop" ];
-      "x-scheme-handler/https" = [ "microsoft-edge-beta.desktop" ];
-      "application/pdf" = [ "microsoft-edge-beta.desktop" ];
+      "x-scheme-handler/http" = [ "chromium-browser.desktop" ];
+      "x-scheme-handler/https" = [ "chromium-browser.desktop" ];
+      "application/pdf" = [ "chromium-browser.desktop" ];
     };
   };
 
@@ -297,19 +309,6 @@ in
       GTK_USE_PORTAL=1
     '';
   };
-
-  # Autostart and configure fcitx5 via Home Manager inputMethod module
-  # 暂时禁用，因为 fcitx5-qt6 在 nixpkgs unstable 中有构建问题
-  # 请使用系统的 fcitx5 安装
-  # i18n.inputMethod = {
-  #   enable = true;
-  #   type = "fcitx5";
-  #   fcitx5.addons = with pkgs; [
-  #     fcitx5-gtk
-  #     fcitx5-chinese-addons
-  #   ];
-  # };
-
   xdg.desktopEntries.cursor = {
     name = "Cursor";
     exec = cursorExec;

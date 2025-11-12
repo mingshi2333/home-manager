@@ -26,6 +26,7 @@ let
       buildInputs = [ pkgs.makeWrapper ];
       postBuild = ''
         rm -f $out/bin/${bin}
+        ${pkgs.lib.concatMapStringsSep "\n        " (a: "rm -f $out/bin/${a}") aliases}
         makeWrapper ${nixGLBin} $out/bin/${name} \
           --add-flags ${pkg}/bin/${bin} \
           ${pkgs.lib.concatMapStringsSep " \\\n        " (f: "--add-flags \"${f}\"") allFlags} \

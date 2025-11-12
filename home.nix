@@ -5,6 +5,60 @@ let
   nixGLPackage = nixglPackages.auto.nixGLDefault;
   nixGLBin = "${nixGLPackage}/bin/nixGL";
 
+  oldNixpkgs = import (builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/nixos-24.05.tar.gz";
+    sha256 = "0zydsqiaz8qi4zd63zsb2gij2p614cgkcaisnk11wjy3nmiq0x1s";
+  }) {
+    inherit (pkgs) system;
+    config.allowUnfree = true;
+  };
+
+  ayugramUpstream = oldNixpkgs.ayugram-desktop or pkgs.telegram-desktop;
+  ayugramBinary = ayugramUpstream.meta.mainProgram or "AyuGram";
+
+  ayugramPackage = pkgs.symlinkJoin {
+    name = "ayugram-desktop-nixgl";
+    paths = [ ayugramUpstream ];
+    buildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm -f $out/bin/${ayugramBinary}
+      rm -f $out/bin/AyuGram
+      rm -f $out/bin/ayugram
+      rm -f $out/bin/ayugram-desktop
+      makeWrapper ${nixGLBin} $out/bin/ayugram-desktop \
+        --add-flags ${ayugramUpstream}/bin/${ayugramBinary} \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx \
+        --set QT_QPA_PLATFORM xcb
+      ln -sf $out/bin/ayugram-desktop $out/bin/${ayugramBinary}
+      ln -sf $out/bin/ayugram-desktop $out/bin/AyuGram
+      ln -sf $out/bin/ayugram-desktop $out/bin/ayugram
+    '';
+  };
+
+  gearleverUpstream = pkgs.gearlever;
+  gearleverBinary = gearleverUpstream.meta.mainProgram or "gearlever";
+
+  gearleverPackage = pkgs.symlinkJoin {
+    name = "gearlever-nixgl";
+    paths = [ gearleverUpstream ];
+    buildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm -f $out/bin/${gearleverBinary}
+      makeWrapper ${nixGLBin} $out/bin/${gearleverBinary} \
+        --add-flags ${gearleverUpstream}/bin/${gearleverBinary} \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        --set GTK_IM_MODULE fcitx \
+        --set QT_IM_MODULE fcitx \
+        --set XMODIFIERS "@im=fcitx" \
+        --set SDL_IM_MODULE fcitx \
+        --set QT_QPA_PLATFORM xcb
+    '';
+  };
+
   cursorPackage = pkgs.symlinkJoin {
     name = "code-cursor-nixgl";
     paths = [ pkgs.code-cursor ];
@@ -126,6 +180,8 @@ let
   readestExec = "${readestPackage}/bin/readest";
   podmanDesktopExec = "${podmanDesktopPackage}/bin/podman-desktop";
   zoteroExec = "${zoteroPackageWrapped}/bin/zotero";
+  ayugramExec = "${ayugramPackage}/bin/ayugram-desktop";
+  gearleverExec = "${gearleverPackage}/bin/${gearleverBinary}";
 in
 {
   # Home Manager 需要知道您的基本配置
@@ -147,6 +203,7 @@ in
 
   # 要安装的软件包
   home.packages = with pkgs; [
+    ayugramPackage
     telegramPackage
     cursorPackage
     onedrivegui
@@ -162,6 +219,7 @@ in
     zoom-us
     zoteroPackageWrapped
     nixGLPackage
+    gearleverPackage
     # --- 特殊包 ---
     nsc
   ];
@@ -235,7 +293,10 @@ in
   '';
 
   programs.zsh.shellAliases = {
+    AyuGram = ayugramExec;
+    ayugram = ayugramExec;
     cursor = cursorExec;
+    gearlever = gearleverExec;
     telegram = telegramExec;
     readest = readestExec;
     podman-desktop = podmanDesktopExec;
@@ -247,6 +308,30 @@ in
   };
 
   # nixGL 包装后的启动脚本，确保命令行和 .desktop 都能加载系统的 GPU 驱动
+  home.file.".local/bin/AyuGram" = {
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      exec ${ayugramExec} "$@"
+    '';
+    executable = true;
+  };
+
+  home.file.".local/bin/ayugram" = {
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      exec ${ayugramExec} "$@"
+    '';
+    executable = true;
+  };
+
+  home.file.".local/bin/gearlever" = {
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      exec ${gearleverExec} "$@"
+    '';
+    executable = true;
+  };
+
   home.file.".local/bin/cursor" = {
     text = ''
       #!${pkgs.bash}/bin/bash
@@ -262,6 +347,7 @@ in
     '';
     executable = true;
   };
+  
 
   home.file.".local/bin/readest" = {
     text = ''
@@ -296,6 +382,7 @@ in
       "x-scheme-handler/http" = [ "chromium-browser.desktop" ];
       "x-scheme-handler/https" = [ "chromium-browser.desktop" ];
       "application/pdf" = [ "chromium-browser.desktop" ];
+      "x-scheme-handler/tg" = [ "telegram.desktop" ];
     };
   };
 
@@ -321,12 +408,34 @@ in
 
   xdg.desktopEntries.telegram = {
     name = "Telegram Desktop";
-    exec = telegramExec;
+    exec = "${telegramExec} -- %u";
     terminal = false;
     type = "Application";
     comment = "Telegram Desktop (nixGL)";
     categories = [ "Network" "InstantMessaging" ];
     icon = "telegram";
+    mimeType = [ "x-scheme-handler/tg" ];
+  };
+
+  xdg.desktopEntries.ayugram = {
+    name = "AyuGram Desktop (nixGL)";
+    exec = ayugramExec;
+    terminal = false;
+    type = "Application";
+    comment = "AyuGram Desktop (nixGL)";
+    categories = [ "Network" "InstantMessaging" ];
+    icon = "ayugram";
+  };
+
+  xdg.desktopEntries."it.mijorus.gearlever" = {
+    name = "Gear Lever (nixGL)";
+    exec = "${gearleverExec} %U";
+    terminal = false;
+    type = "Application";
+    comment = "Manage AppImages with Gear Lever (wrapped by nixGL)";
+    categories = [ "GTK" "Utility" ];
+    icon = "it.mijorus.gearlever";
+    mimeType = [ "application/vnd.appimage" ];
   };
 
   xdg.desktopEntries."readest-nixgl" = {

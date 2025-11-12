@@ -92,14 +92,6 @@ in
   xdg.dataFile."applications/mimeapps.list".force = true;
 
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["reloadSystemd"] ''
-    $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
-
-    if [ -d "$HOME/.nix-profile/share/applications" ]; then
-      $DRY_RUN_CMD ${pkgs.rsync}/bin/rsync -av --ignore-existing \
-        "$HOME/.nix-profile/share/applications/"*.desktop \
-        "$HOME/.local/share/applications/" 2>/dev/null || true
-    fi
-
     if [ -x "${pkgs.desktop-file-utils}/bin/update-desktop-database" ]; then
       $DRY_RUN_CMD ${pkgs.desktop-file-utils}/bin/update-desktop-database \
         "$HOME/.local/share/applications" 2>/dev/null || true

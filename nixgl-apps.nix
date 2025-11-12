@@ -23,13 +23,20 @@ let
     in pkgs.runCommand "${name}-nixgl" {
       nativeBuildInputs = [ pkgs.makeWrapper ];
     } ''
-      mkdir -p $out/bin $out/share
-      cp -rs ${pkg}/share/* $out/share/ 2>/dev/null || true
-      chmod -R +w $out/share 2>/dev/null || true
-      if [ -d "$out/share/applications" ]; then
-        for desktop in $out/share/applications/*.desktop; do
+      mkdir -p $out/bin $out/share/applications
+      if [ -d "${pkg}/share" ]; then
+        for item in ${pkg}/share/*; do
+          [ -e "$item" ] || continue
+          [ "$(basename "$item")" = "applications" ] && continue
+          ln -s "$item" "$out/share/" 2>/dev/null || true
+        done
+      fi
+      if [ -d "${pkg}/share/applications" ]; then
+        for desktop in ${pkg}/share/applications/*.desktop; do
           [ -f "$desktop" ] || continue
-          ${pkgs.gnused}/bin/sed -i "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" "$desktop"
+          cp "$desktop" "$out/share/applications/${name}.desktop"
+          chmod +w "$out/share/applications/${name}.desktop"
+          ${pkgs.gnused}/bin/sed -i "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" "$out/share/applications/${name}.desktop"
         done
       fi
       makeWrapper ${nixGLBin} $out/bin/${name} \

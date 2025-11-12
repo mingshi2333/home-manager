@@ -91,7 +91,7 @@ in
   xdg.configFile."mimeapps.list".force = true;
   xdg.dataFile."applications/mimeapps.list".force = true;
 
-  home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["writeBoundary"] ''
+  home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["reloadSystemd"] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
 
     if [ -d "$HOME/.nix-profile/share/applications" ]; then

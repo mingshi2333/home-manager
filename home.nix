@@ -91,8 +91,6 @@ in
   xdg.configFile."mimeapps.list".force = true;
   xdg.dataFile."applications/mimeapps.list".force = true;
 
-  xdg.desktopEntries = nixglApps.desktopEntries;
-
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["writeBoundary"] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
 

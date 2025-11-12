@@ -23,9 +23,15 @@ let
     in pkgs.runCommand "${name}-nixgl" {
       nativeBuildInputs = [ pkgs.makeWrapper ];
     } ''
-      mkdir -p $out/bin
-      mkdir -p $out/share
-      ${pkgs.lib.optionalString (pkg ? share) "ln -s ${pkg}/share/* $out/share/ 2>/dev/null || true"}
+      mkdir -p $out/bin $out/share
+      cp -rs ${pkg}/share/* $out/share/ 2>/dev/null || true
+      chmod -R +w $out/share 2>/dev/null || true
+      if [ -d "$out/share/applications" ]; then
+        for desktop in $out/share/applications/*.desktop; do
+          [ -f "$desktop" ] || continue
+          ${pkgs.gnused}/bin/sed -i "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" "$desktop"
+        done
+      fi
       makeWrapper ${nixGLBin} $out/bin/${name} \
         --add-flags ${pkg}/bin/${bin} \
         ${pkgs.lib.concatMapStringsSep " \\\n      " (f: "--add-flags \"${f}\"") allFlags} \

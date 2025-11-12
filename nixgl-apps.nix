@@ -95,7 +95,7 @@ let
       }) { inherit (pkgs) system; config.allowUnfree = true; }).ayugram-desktop or pkgs.telegram-desktop;
       name = "ayugram-desktop";
       binary = "AyuGram";
-      aliases = [ "AyuGram" "ayugram" ];
+      aliases = [ "ayugram" ];
       desktopName = "AyuGram Desktop (nixGL)";
       comment = "AyuGram Desktop (nixGL)";
       categories = [ "Network" "InstantMessaging" ];

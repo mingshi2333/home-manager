@@ -63,16 +63,18 @@ in
     GTK_USE_PORTAL=1
   '';
 
-  programs.zsh.initExtra = ''
-    ${pkgs.lib.concatStringsSep "\n    " (pkgs.lib.mapAttrsToList (k: v: "export ${k}=${v}") fcitxEnv)}
-    export ELECTRON_OZONE_PLATFORM_HINT=wayland
-    export NIXOS_OZONE_WL=1
-  '';
-
-  programs.zsh.shellAliases = nixglApps.shellAliases // {
-    hms = "cd ~/.config/home-manager && home-manager switch";
-    hmu = "cd ~/.config/home-manager && nix flake update && home-manager switch";
-    hmr = "cd ~/.config/home-manager && home-manager switch --rollback";
+  programs.zsh = {
+    enable = true;
+    initExtra = ''
+      ${pkgs.lib.concatStringsSep "\n      " (pkgs.lib.mapAttrsToList (k: v: "export ${k}=${v}") fcitxEnv)}
+      export ELECTRON_OZONE_PLATFORM_HINT=wayland
+      export NIXOS_OZONE_WL=1
+    '';
+    shellAliases = nixglApps.shellAliases // {
+      hms = "cd ~/.config/home-manager && home-manager switch";
+      hmu = "cd ~/.config/home-manager && nix flake update && home-manager switch";
+      hmr = "cd ~/.config/home-manager && home-manager switch --rollback";
+    };
   };
 
   home.file = nixglApps.binScripts;

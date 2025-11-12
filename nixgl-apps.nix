@@ -24,10 +24,11 @@ let
       name = "${name}-nixgl";
       paths = [ pkg ];
       ignoreCollisions = true;
+      nativeBuildInputs = [ pkgs.makeWrapper ];
       postBuild = ''
         rm -f $out/bin/${bin}
         ${pkgs.lib.concatMapStringsSep "\n        " (a: "rm -f $out/bin/${a}") aliases}
-        makeWrapper ${nixGLBin} $out/bin/${name} \
+        ${pkgs.makeWrapper}/bin/makeWrapper ${nixGLBin} $out/bin/${name} \
           --add-flags ${pkg}/bin/${bin} \
           ${pkgs.lib.concatMapStringsSep " \\\n        " (f: "--add-flags \"${f}\"") allFlags} \
           --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \

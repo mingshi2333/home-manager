@@ -20,23 +20,19 @@ let
         else [];
       allFlags = waylandFlags ++ extraFlags;
       allEnv = fcitxEnv // platformEnv // extraEnv;
-    in pkgs.buildEnv {
-      name = "${name}-nixgl";
-      paths = [ pkg ];
-      ignoreCollisions = true;
+    in pkgs.runCommand "${name}-nixgl" {
       nativeBuildInputs = [ pkgs.makeWrapper ];
-      postBuild = ''
-        rm -f $out/bin/${bin}
-        ${pkgs.lib.concatMapStringsSep "\n        " (a: "rm -f $out/bin/${a}") aliases}
-        ${pkgs.makeWrapper}/bin/makeWrapper ${nixGLBin} $out/bin/${name} \
-          --add-flags ${pkg}/bin/${bin} \
-          ${pkgs.lib.concatMapStringsSep " \\\n        " (f: "--add-flags \"${f}\"") allFlags} \
-          --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
-          ${pkgs.lib.concatStringsSep " \\\n        " (pkgs.lib.mapAttrsToList (k: v: "--set ${k} ${v}") allEnv)}
-        ${pkgs.lib.concatMapStringsSep "\n        " (a: "ln -sf $out/bin/${name} $out/bin/${a}") aliases}
-      '';
-      pathsToLink = [ "/bin" "/share" ];
-    };
+    } ''
+      mkdir -p $out/bin
+      mkdir -p $out/share
+      ${pkgs.lib.optionalString (pkg ? share) "ln -s ${pkg}/share/* $out/share/ 2>/dev/null || true"}
+      makeWrapper ${nixGLBin} $out/bin/${name} \
+        --add-flags ${pkg}/bin/${bin} \
+        ${pkgs.lib.concatMapStringsSep " \\\n      " (f: "--add-flags \"${f}\"") allFlags} \
+        --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
+        ${pkgs.lib.concatStringsSep " \\\n      " (pkgs.lib.mapAttrsToList (k: v: "--set ${k} ${v}") allEnv)}
+      ${pkgs.lib.concatMapStringsSep "\n      " (a: "ln -s $out/bin/${name} $out/bin/${a}") aliases}
+    '';
 
   mkNixGLApp = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], desktopName, comment, categories, icon, mimeTypes ? [], execArgs ? "" }:
     let

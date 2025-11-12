@@ -20,10 +20,10 @@ let
         else [];
       allFlags = waylandFlags ++ extraFlags;
       allEnv = fcitxEnv // platformEnv // extraEnv;
-    in pkgs.symlinkJoin {
+    in pkgs.buildEnv {
       name = "${name}-nixgl";
       paths = [ pkg ];
-      buildInputs = [ pkgs.makeWrapper ];
+      ignoreCollisions = true;
       postBuild = ''
         rm -f $out/bin/${bin}
         ${pkgs.lib.concatMapStringsSep "\n        " (a: "rm -f $out/bin/${a}") aliases}
@@ -34,6 +34,7 @@ let
           ${pkgs.lib.concatStringsSep " \\\n        " (pkgs.lib.mapAttrsToList (k: v: "--set ${k} ${v}") allEnv)}
         ${pkgs.lib.concatMapStringsSep "\n        " (a: "ln -sf $out/bin/${name} $out/bin/${a}") aliases}
       '';
+      pathsToLink = [ "/bin" "/share" ];
     };
 
   mkNixGLApp = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], desktopName, comment, categories, icon, mimeTypes ? [], execArgs ? "" }:

@@ -91,6 +91,11 @@ let
       pkg = pkgs.telegram-desktop;
       name = "telegram-desktop";
       binary = "Telegram";
+      extraEnv = {
+        QT_QPA_PLATFORM = "wayland";
+        QTWEBENGINE_CHROMIUM_FLAGS = "--disable-gpu-sandbox --no-sandbox --disable-seccomp-filter-sandbox";
+        QTWEBENGINE_DISABLE_SANDBOX = "1";
+      };
       aliases = [ "Telegram" "telegram" ];
       desktopName = "Telegram Desktop";
       comment = "Telegram Desktop (nixGL)";

@@ -93,7 +93,6 @@ let
       binary = "Telegram";
       extraEnv = {
         QT_QPA_PLATFORM = "wayland";
-        QTWEBENGINE_CHROMIUM_FLAGS = "--disable-gpu-sandbox --no-sandbox --disable-seccomp-filter-sandbox";
         QTWEBENGINE_DISABLE_SANDBOX = "1";
       };
       aliases = [ "Telegram" "telegram" ];

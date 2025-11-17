@@ -148,7 +148,11 @@ let
       pkg = pkgs.readest;
       name = "readest";
       platform = "wayland";
-      extraFlags = [ "--single-instance" ];
+      extraFlags = [
+        "--single-instance"
+        "--disable-gpu-sandbox"
+        "--ignore-gpu-blocklist"
+      ];
       desktopName = "Readest (nixGL)";
       comment = "Readest (nixGL)";
       categories = [ "Office" "Utility" ];

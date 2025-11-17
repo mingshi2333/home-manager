@@ -8,7 +8,7 @@ let
     SDL_IM_MODULE = "fcitx";
   };
 
-  wrapWithNixGL = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [] }:
+  wrapWithNixGL = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], mimeTypes ? [], execArgs ? "" }:
     let
       bin = if binary != null then binary else (pkg.meta.mainProgram or name);
       isWayland = platform == "wayland";
@@ -39,6 +39,19 @@ let
           ${pkgs.gnused}/bin/sed -i \
             "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" \
             "$out/share/applications/${name}.desktop"
+          ${pkgs.lib.optionalString (execArgs != "") ''
+            if grep -q "^Exec=" "$out/share/applications/${name}.desktop"; then
+              ${pkgs.gnused}/bin/sed -i "s|^\(Exec=.*\)$|\1 ${execArgs}|" "$out/share/applications/${name}.desktop"
+            fi
+          ''}
+          ${pkgs.lib.optionalString (mimeTypes != []) ''
+            mimeStr="${pkgs.lib.concatStringsSep ";" mimeTypes};"
+            if grep -q "^MimeType=" "$out/share/applications/${name}.desktop"; then
+              ${pkgs.gnused}/bin/sed -i "s|^MimeType=.*|MimeType=$mimeStr|" "$out/share/applications/${name}.desktop"
+            else
+              echo "MimeType=$mimeStr" >> "$out/share/applications/${name}.desktop"
+            fi
+          ''}
         done
       fi
       makeWrapper ${nixGLBin} $out/bin/${name} \
@@ -51,7 +64,7 @@ let
 
   mkNixGLApp = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], desktopName, comment, categories, icon, mimeTypes ? [], execArgs ? "" }:
     let
-      wrapped = wrapWithNixGL { inherit pkg name binary platform extraFlags extraEnv aliases; };
+      wrapped = wrapWithNixGL { inherit pkg name binary platform extraFlags extraEnv aliases mimeTypes execArgs; };
       execPath = "${wrapped}/bin/${name}";
       allNames = [name] ++ aliases;
     in {

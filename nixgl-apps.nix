@@ -148,6 +148,7 @@ let
       pkg = pkgs.readest;
       name = "readest";
       platform = "wayland";
+      extraFlags = [ "--single-instance" ];
       desktopName = "Readest (nixGL)";
       comment = "Readest (nixGL)";
       categories = [ "Office" "Utility" ];

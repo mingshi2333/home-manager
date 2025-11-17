@@ -36,7 +36,9 @@ let
           [ -f "$desktop" ] || continue
           cp "$desktop" "$out/share/applications/${name}.desktop"
           chmod +w "$out/share/applications/${name}.desktop"
-          ${pkgs.gnused}/bin/sed -i "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" "$out/share/applications/${name}.desktop"
+          ${pkgs.gnused}/bin/sed -i \
+            "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" \
+            "$out/share/applications/${name}.desktop"
         done
       fi
       makeWrapper ${nixGLBin} $out/bin/${name} \
@@ -138,6 +140,7 @@ let
       categories = [ "Office" "Utility" ];
       icon = "readest";
       mimeTypes = [
+        "x-scheme-handler/readest"
         "application/epub+zip"
         "application/x-mobipocket-ebook"
         "application/vnd.amazon.ebook"
@@ -146,7 +149,7 @@ let
         "application/vnd.comicbook+zip"
         "application/pdf"
       ];
-      execArgs = "%F";
+      execArgs = "%u";
     };
 
     podman-desktop = mkNixGLApp {

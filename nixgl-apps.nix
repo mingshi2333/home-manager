@@ -116,7 +116,7 @@ let
       categories = [ "Network" "InstantMessaging" ];
       icon = "telegram";
       mimeTypes = [ "x-scheme-handler/tg" ];
-      execArgs = "-- %u ";
+      execArgs = "-- %u -- %F";
     };
 
     ayugram = mkNixGLApp {

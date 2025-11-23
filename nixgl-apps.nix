@@ -8,7 +8,7 @@ let
     SDL_IM_MODULE = "fcitx";
   };
 
-  wrapWithNixGL = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], mimeTypes ? [], execArgs ? "" }:
+  wrapWithNixGL = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], mimeTypes ? [], execArgs ? "", dbusService ? null }:
     let
       bin = if binary != null then binary else (pkg.meta.mainProgram or name);
       isWayland = platform == "wayland";
@@ -27,18 +27,41 @@ let
       if [ -d "${pkg}/share" ]; then
         for item in ${pkg}/share/*; do
           [ -e "$item" ] || continue
-          [ "$(basename "$item")" = "applications" ] && continue
+          itemName=$(basename "$item")
+          [ "$itemName" = "applications" ] && continue
+          [ "$itemName" = "dbus-1" ] && continue
           ln -s "$item" "$out/share/" 2>/dev/null || true
         done
       fi
+      ${pkgs.lib.optionalString (dbusService != null) ''
+        mkdir -p $out/share/dbus-1/services
+        if [ -d "${pkg}/share/dbus-1/services" ]; then
+          for service in ${pkg}/share/dbus-1/services/*.service; do
+            [ -f "$service" ] || continue
+            serviceName="${dbusService}"
+            cp "$service" "$out/share/dbus-1/services/$serviceName"
+            chmod +w "$out/share/dbus-1/services/$serviceName"
+            ${pkgs.gnused}/bin/sed -i \
+              "s|Exec=${pkg}/bin/.*|Exec=$out/bin/${name}|g" \
+              "$out/share/dbus-1/services/$serviceName"
+          done
+        fi
+      ''}
       if [ -d "${pkg}/share/applications" ]; then
         for desktop in ${pkg}/share/applications/*.desktop; do
           [ -f "$desktop" ] || continue
           cp "$desktop" "$out/share/applications/${name}.desktop"
           chmod +w "$out/share/applications/${name}.desktop"
           ${pkgs.gnused}/bin/sed -i \
-            "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; s|Exec=${bin}|Exec=$out/bin/${name}|g" \
+            "s|Exec=${pkg}/bin/|Exec=$out/bin/|g; \
+             s|Exec=${bin}|Exec=$out/bin/${name}|g; \
+             s|Exec=env DESKTOPINTEGRATION=1 ${bin}|Exec=$out/bin/${name}|g; \
+             s|Exec=env [^ ]* ${bin}|Exec=$out/bin/${name}|g" \
             "$out/share/applications/${name}.desktop"
+          ${pkgs.lib.optionalString (dbusService != null) ''
+            ${pkgs.gnused}/bin/sed -i "s|^DBusActivatable=.*|DBusActivatable=true|" \
+              "$out/share/applications/${name}.desktop"
+          ''}
           ${pkgs.lib.optionalString (execArgs != "") ''
             if grep -q "^Exec=" "$out/share/applications/${name}.desktop"; then
               ${pkgs.gnused}/bin/sed -i "s|^\(Exec=.*\)$|\1 ${execArgs}|" "$out/share/applications/${name}.desktop"
@@ -57,14 +80,15 @@ let
       makeWrapper ${nixGLBin} $out/bin/${name} \
         --add-flags ${pkg}/bin/${bin} \
         ${pkgs.lib.concatMapStringsSep " \\\n      " (f: "--add-flags \"${f}\"") allFlags} \
+        --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.xdg-utils pkgs.coreutils pkgs.gnugrep pkgs.gnused ]} \
         --prefix LD_LIBRARY_PATH : ${pkgs.fcitx5-gtk}/lib \
         ${pkgs.lib.concatStringsSep " \\\n      " (pkgs.lib.mapAttrsToList (k: v: "--set ${k} ${v}") allEnv)}
       ${pkgs.lib.concatMapStringsSep "\n      " (a: "ln -s $out/bin/${name} $out/bin/${a}") aliases}
     '';
 
-  mkNixGLApp = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], desktopName, comment, categories, icon, mimeTypes ? [], execArgs ? "" }:
+  mkNixGLApp = { pkg, name, binary ? null, platform ? "xcb", extraFlags ? [], extraEnv ? {}, aliases ? [], desktopName, comment, categories, icon, mimeTypes ? [], execArgs ? "", dbusService ? null }:
     let
-      wrapped = wrapWithNixGL { inherit pkg name binary platform extraFlags extraEnv aliases mimeTypes execArgs; };
+      wrapped = wrapWithNixGL { inherit pkg name binary platform extraFlags extraEnv aliases mimeTypes execArgs dbusService; };
       execPath = "${wrapped}/bin/${name}";
       allNames = [name] ++ aliases;
     in {
@@ -116,22 +140,25 @@ let
       categories = [ "Network" "InstantMessaging" ];
       icon = "telegram";
       mimeTypes = [ "x-scheme-handler/tg" ];
-      execArgs = "-- %u -- %F";
+      dbusService = "org.telegram.desktop.service";
     };
 
-    ayugram = mkNixGLApp {
-      pkg = (import (builtins.fetchTarball {
-        url = "https://github.com/NixOS/nixpkgs/archive/nixos-24.05.tar.gz";
-        sha256 = "0zydsqiaz8qi4zd63zsb2gij2p614cgkcaisnk11wjy3nmiq0x1s";
-      }) { inherit (pkgs) system; config.allowUnfree = true; }).ayugram-desktop or pkgs.telegram-desktop;
-      name = "ayugram-desktop";
-      binary = "AyuGram";
-      aliases = [ "ayugram" ];
-      desktopName = "AyuGram Desktop (nixGL)";
-      comment = "AyuGram Desktop (nixGL)";
-      categories = [ "Network" "InstantMessaging" ];
-      icon = "ayugram";
-    };
+    # ayugram = mkNixGLApp {
+    #   pkg = pkgs.ayugram-desktop;
+    #   name = "ayugram-desktop";
+    #   binary = "AyuGram";
+    #   extraEnv = {
+    #     QT_QPA_PLATFORM = "xcb";
+    #     QTWEBENGINE_DISABLE_SANDBOX = "1";
+    #   };
+    #   aliases = [ "ayugram" ];
+    #   desktopName = "AyuGram Desktop";
+    #   comment = "AyuGram Desktop (nixGL)";
+    #   categories = [ "Network" "InstantMessaging" ];
+    #   icon = "ayugram";
+    #   mimeTypes = [ "x-scheme-handler/tg" ];
+    #   dbusService = "org.ayugram.desktop.service";
+    # };
 
     gearlever = mkNixGLApp {
       pkg = pkgs.gearlever;

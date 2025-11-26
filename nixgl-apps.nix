@@ -125,7 +125,15 @@ let
       categories = [ "Development" "IDE" ];
       icon = "cursor";
     };
-
+    cider1 = mkNixGLApp {
+      pkg = pkgs.cider;
+      name = "cider1";
+      platform = "x11";
+      desktopName = "cider1";
+      comment = "cider1 (nixGL)";
+      categories = [ "Development" "IDE" ];
+      icon = "cider";
+    };
     telegram = mkNixGLApp {
       pkg = pkgs.telegram-desktop;
       name = "telegram-desktop";
@@ -143,22 +151,6 @@ let
       dbusService = "org.telegram.desktop.service";
     };
 
-    # ayugram = mkNixGLApp {
-    #   pkg = pkgs.ayugram-desktop;
-    #   name = "ayugram-desktop";
-    #   binary = "AyuGram";
-    #   extraEnv = {
-    #     QT_QPA_PLATFORM = "xcb";
-    #     QTWEBENGINE_DISABLE_SANDBOX = "1";
-    #   };
-    #   aliases = [ "ayugram" ];
-    #   desktopName = "AyuGram Desktop";
-    #   comment = "AyuGram Desktop (nixGL)";
-    #   categories = [ "Network" "InstantMessaging" ];
-    #   icon = "ayugram";
-    #   mimeTypes = [ "x-scheme-handler/tg" ];
-    #   dbusService = "org.ayugram.desktop.service";
-    # };
 
     gearlever = mkNixGLApp {
       pkg = pkgs.gearlever;

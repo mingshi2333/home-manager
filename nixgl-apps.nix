@@ -1,4 +1,4 @@
-{ config, pkgs, nixGLBin, ... }:
+{ config, pkgs, nixGLBin, enabledApps ? null, ... }:
 
 let
   fcitxEnv = {
@@ -115,7 +115,7 @@ let
       mimeAssoc = if mimeTypes != [] then pkgs.lib.listToAttrs (map (m: { name = m; value = [ "${name}.desktop" ]; }) mimeTypes) else {};
     };
 
-  apps = {
+  allApps = {
     cursor = mkNixGLApp {
       pkg = pkgs.code-cursor;
       name = "cursor";
@@ -212,6 +212,8 @@ let
       icon = "zotero";
     };
   };
+
+  apps = if enabledApps == null then allApps else pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name enabledApps) allApps;
 
 in
 {

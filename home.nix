@@ -5,7 +5,17 @@ let
   nixGLPackage = nixglPackages.auto.nixGLDefault;
   nixGLBin = "${nixGLPackage}/bin/nixGL";
 
-  nixglApps = import ./nixgl-apps.nix { inherit config pkgs nixGLBin; };
+  enabledNixglApps = [
+    "cursor"
+    "telegram"
+    "podman-desktop"
+    "zotero"
+  ];
+
+  nixglApps = import ./nixgl-apps.nix {
+    inherit config pkgs nixGLBin;
+    enabledApps = enabledNixglApps;
+  };
 
   fcitxEnv = {
     GTK_IM_MODULE = "fcitx";
@@ -85,11 +95,29 @@ in
     };
   };
 
+  xdg.desktopEntries = nixglApps.desktopEntries;
+
   xdg.configFile."mimeapps.list".force = true;
   xdg.dataFile."applications/mimeapps.list".force = true;
 
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["reloadSystemd"] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
+
+    if [ -d "$HOME/.local/share/applications" ]; then
+      for desktop in $HOME/.local/share/applications/*.desktop; do
+        [ -e "$desktop" ] || continue
+        if [ -L "$desktop" ]; then
+          target=$(readlink -f "$desktop")
+          case "$target" in
+            $HOME/.nix-profile/share/applications/*)
+              if [ ! -e "$target" ]; then
+                $DRY_RUN_CMD rm -f "$desktop"
+              fi
+              ;;
+          esac
+        fi
+      done
+    fi
 
     if [ -d "$HOME/.nix-profile/share/applications" ]; then
       for desktop in $HOME/.nix-profile/share/applications/*.desktop; do

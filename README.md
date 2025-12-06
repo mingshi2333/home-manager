@@ -148,3 +148,17 @@ journalctl --user -xe
 update-desktop-database ~/.local/share/applications
 kbuildsycoca6  # KDE
 ```
+
+## 桌面条目去重与刷新
+
+Home Manager 会自动：
+- 将 `~/.nix-profile/share/applications` 下的 .desktop 链接到 `~/.local/share/applications`
+- 刷新 desktop 数据库与 KDE 缓存
+- 按应用列表自动去重（默认包含 nixglApps 中的应用名、telegram 相关前缀）
+
+如需新增去重前缀，可在 `home.nix` 的 `dedupApps` 列表中追加，例如：
+```nix
+  dedupApps = (builtins.attrNames nixglApps.desktopEntries)
+    ++ [ "org.telegram.desktop" "telegram" "myapp-prefix" ];
+```
+去重逻辑会删除非 Nix profile 来源的同名/前缀 .desktop，避免菜单重复。无需手工清理。*** End Patch"));

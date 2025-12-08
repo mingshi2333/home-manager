@@ -172,7 +172,7 @@ let
     ayugram = mkNixGLApp {
       pkg = pkgs.ayugram-desktop;
       name = "ayugram-desktop";
-      binary = "ayugram";
+      binary = "AyuGram";
       extraEnv = {
         QT_QPA_PLATFORM = "wayland";
         QTWEBENGINE_DISABLE_SANDBOX = "1";
@@ -183,7 +183,7 @@ let
       categories = [ "Network" "InstantMessaging" ];
       icon = "ayugram";
       mimeTypes = [ "x-scheme-handler/tg" ];
-      dbusService = "org.telegram.desktop.service";
+      dbusService = "org.ayugram.desktop.service";
     };
   };
 

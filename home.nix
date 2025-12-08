@@ -10,7 +10,7 @@ let
     "zotero"
     "lenovo-legion"
     "gearlever"
-    "ayugram-desktop"
+    "ayugram"
   ];
 
   nixglApps = import ./nixgl-apps.nix {

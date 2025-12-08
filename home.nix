@@ -6,10 +6,13 @@ let
   nixGLBin = "${nixGLPackage}/bin/nixGL";
 
   enabledNixglApps = [
-    "cursor"
     "telegram"
     "podman-desktop"
     "zotero"
+    "lenovo-legion"
+    "gearlever"
+    "pdfstudioviewer"
+    "spotify"
   ];
 
   nixglApps = import ./nixgl-apps.nix {
@@ -39,8 +42,6 @@ in
     kdePackages.kate
     nix
     nix-du
-    lenovo-legion
-    pdfstudioviewer
     qtscrcpy
     xdg-utils
     vulkan-tools

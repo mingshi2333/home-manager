@@ -1,4 +1,4 @@
-{ config, pkgs, nixGLBin, enabledApps ? null, ... }:
+{ config, pkgs, nixGLBin, ... }:
 
 let
   fcitxEnv = {
@@ -115,25 +115,8 @@ let
       mimeAssoc = if mimeTypes != [] then pkgs.lib.listToAttrs (map (m: { name = m; value = [ "${name}.desktop" ]; }) mimeTypes) else {};
     };
 
-  allApps = {
-    cursor = mkNixGLApp {
-      pkg = pkgs.code-cursor;
-      name = "cursor";
-      platform = "wayland";
-      desktopName = "Cursor";
-      comment = "Cursor (nixGL)";
-      categories = [ "Development" "IDE" ];
-      icon = "cursor";
-    };
-    cider1 = mkNixGLApp {
-      pkg = pkgs.cider;
-      name = "cider1";
-      platform = "x11";
-      desktopName = "cider1";
-      comment = "cider1 (nixGL)";
-      categories = [ "Development" "IDE" ];
-      icon = "cider";
-    };
+  apps = {
+
     telegram = mkNixGLApp {
       pkg = pkgs.telegram-desktop;
       name = "telegram-desktop";
@@ -163,31 +146,6 @@ let
       execArgs = "%U";
     };
 
-    readest = mkNixGLApp {
-      pkg = pkgs.readest;
-      name = "readest";
-      platform = "wayland";
-      extraFlags = [
-        "--single-instance"
-        "--disable-gpu-sandbox"
-        "--ignore-gpu-blocklist"
-      ];
-      desktopName = "Readest (nixGL)";
-      comment = "Readest (nixGL)";
-      categories = [ "Office" "Utility" ];
-      icon = "readest";
-      mimeTypes = [
-        "x-scheme-handler/readest"
-        "application/epub+zip"
-        "application/x-mobipocket-ebook"
-        "application/vnd.amazon.ebook"
-        "application/vnd.amazon.mobi8-ebook"
-        "application/x-fictionbook+xml"
-        "application/vnd.comicbook+zip"
-        "application/pdf"
-      ];
-      execArgs = "%u";
-    };
 
     podman-desktop = mkNixGLApp {
       pkg = pkgs.podman-desktop;
@@ -212,8 +170,6 @@ let
       icon = "zotero";
     };
   };
-
-  apps = if enabledApps == null then allApps else pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name enabledApps) allApps;
 
 in
 {

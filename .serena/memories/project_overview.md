@@ -1,0 +1,5 @@
+# Project overview
+- Purpose: Home Manager configuration for user `mingshi`, focused on nixGL-wrapped GUI apps, fcitx input env, and desktop entry dedup/refresh for Plasma/KDE.
+- Tech stack: Nix flakes (`flake.nix`), Home Manager, nixGL wrappers (see `nixgl-noimpure.nix`, `nixgl-apps.nix`), shell aliases for maintenance.
+- Structure: `home.nix` main config and activation hooks; `nixgl-apps.nix` defines/creates wrapped apps, desktop entries, mime associations, and shell aliases; `nixgl-noimpure.nix` provides nixGL package set; `README.md` documents workflow and app-adding pattern.
+- Key behaviours: Enabled apps listed in `enabledNixglApps` (home.nix) feed into nixGL wrappers and desktop entries; activation script refreshes `~/.local/share/applications` from `~/.nix-profile/share/applications` and removes duplicates for known prefixes.

@@ -6,12 +6,11 @@ let
   nixGLBin = "${nixGLPackage}/bin/nixGL";
 
   enabledNixglApps = [
-    "telegram"
     "podman-desktop"
     "zotero"
     "lenovo-legion"
     "gearlever"
-    "pdfstudioviewer"
+    "ayugram-desktop"
   ];
 
   nixglApps = import ./nixgl-apps.nix {
@@ -146,19 +145,6 @@ in
     if systemctl --user list-units --type=service 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q plasma-plasmashell.service; then
       systemctl --user restart plasma-plasmashell.service >>"$LOG" 2>&1 || true
       date +"[%F %T] systemctl restart plasma-plasmashell.service done" >> "$LOG"
-      exit 0
-    fi
-
-    # Fallback: explicitly quit & restart plasmashell via KDE helpers
-    if command -v kquitapp6 >/dev/null 2>&1 && command -v kstart6 >/dev/null 2>&1; then
-      $DRY_RUN_CMD kquitapp6 plasmashell >>"$LOG" 2>&1 || true
-      $DRY_RUN_CMD kstart6 plasmashell >>"$LOG" 2>&1 || true
-      date +"[%F %T] used kquitapp6/kstart6" >> "$LOG"
-      exit 0
-    elif command -v kquitapp5 >/dev/null 2>&1 && command -v kstart5 >/dev/null 2>&1; then
-      $DRY_RUN_CMD kquitapp5 plasmashell >>"$LOG" 2>&1 || true
-      $DRY_RUN_CMD kstart5 plasmashell >>"$LOG" 2>&1 || true
-      date +"[%F %T] used kquitapp5/kstart5" >> "$LOG"
       exit 0
     fi
 

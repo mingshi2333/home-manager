@@ -1,4 +1,4 @@
-{ config, pkgs, nixGLBin, ... }:
+{ config, pkgs, nixGLBin, enabledApps ? null, ... }:
 
 let
   fcitxEnv = {
@@ -117,22 +117,22 @@ let
 
   apps = {
 
-    telegram = mkNixGLApp {
-      pkg = pkgs.telegram-desktop;
-      name = "telegram-desktop";
-      binary = "Telegram";
-      extraEnv = {
-        QT_QPA_PLATFORM = "wayland";
-        QTWEBENGINE_DISABLE_SANDBOX = "1";
-      };
-      aliases = [ "Telegram" "telegram" ];
-      desktopName = "Telegram Desktop";
-      comment = "Telegram Desktop (nixGL)";
-      categories = [ "Network" "InstantMessaging" ];
-      icon = "telegram";
-      mimeTypes = [ "x-scheme-handler/tg" ];
-      dbusService = "org.telegram.desktop.service";
-    };
+    # telegram = mkNixGLApp {
+    #   pkg = pkgs.telegram-desktop;
+    #   name = "telegram-desktop";
+    #   binary = "Telegram";
+    #   extraEnv = {
+    #     QT_QPA_PLATFORM = "wayland";
+    #     QTWEBENGINE_DISABLE_SANDBOX = "1";
+    #   };
+    #   aliases = [ "Telegram" "telegram" ];
+    #   desktopName = "Telegram Desktop";
+    #   comment = "Telegram Desktop (nixGL)";
+    #   categories = [ "Network" "InstantMessaging" ];
+    #   icon = "telegram";
+    #   mimeTypes = [ "x-scheme-handler/tg" ];
+    #   dbusService = "org.telegram.desktop.service";
+    # };
 
 
     gearlever = mkNixGLApp {
@@ -169,13 +169,33 @@ let
       categories = [ "Office" "Utility" ];
       icon = "zotero";
     };
+    ayugram = mkNixGLApp {
+      pkg = pkgs.ayugram-desktop;
+      name = "ayugram-desktop";
+      binary = "ayugram";
+      extraEnv = {
+        QT_QPA_PLATFORM = "wayland";
+        QTWEBENGINE_DISABLE_SANDBOX = "1";
+      };
+      aliases = [ "Ayugram" "ayugram" ];
+      desktopName = "Ayugram Desktop";
+      comment = "Ayugram Desktop (nixGL)";
+      categories = [ "Network" "InstantMessaging" ];
+      icon = "ayugram";
+      mimeTypes = [ "x-scheme-handler/tg" ];
+      dbusService = "org.telegram.desktop.service";
+    };
   };
 
 in
-{
-  packages = pkgs.lib.mapAttrsToList (_: app: app.package) apps;
-  shellAliases = pkgs.lib.foldl' (acc: app: acc // app.shellAliases) {} (pkgs.lib.attrValues apps);
-  binScripts = pkgs.lib.foldl' (acc: app: acc // app.binScripts) {} (pkgs.lib.attrValues apps);
-  desktopEntries = pkgs.lib.mapAttrs (_: app: app.desktopEntry) apps;
-  mimeAssociations = pkgs.lib.foldl' (acc: app: acc // app.mimeAssoc) {} (pkgs.lib.attrValues apps);
+let
+  # Only build the apps listed in enabledApps (default: all)
+  selectedNames = if enabledApps == null then builtins.attrNames apps else enabledApps;
+  selectedApps = pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name selectedNames) apps;
+in {
+  packages = pkgs.lib.mapAttrsToList (_: app: app.package) selectedApps;
+  shellAliases = pkgs.lib.foldl' (acc: app: acc // app.shellAliases) {} (pkgs.lib.attrValues selectedApps);
+  binScripts = pkgs.lib.foldl' (acc: app: acc // app.binScripts) {} (pkgs.lib.attrValues selectedApps);
+  desktopEntries = pkgs.lib.mapAttrs (_: app: app.desktopEntry) selectedApps;
+  mimeAssociations = pkgs.lib.foldl' (acc: app: acc // app.mimeAssoc) {} (pkgs.lib.attrValues selectedApps);
 }

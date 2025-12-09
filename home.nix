@@ -172,9 +172,35 @@ in
       fi
 
       if [ -n "$PLASMA_BIN" ]; then
+        # Kill all plasmashell processes
         ${pkgs.procps}/bin/pkill plasmashell || true
-        ("$PLASMA_BIN" --replace >>"$LOG" 2>&1 &)
-        date +"[%F %T] used $PLASMA_BIN --replace" >> "$LOG"
+        
+        # Wait for processes to fully terminate (with timeout)
+        for i in {1..10}; do
+          if ! ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
+            break
+          fi
+          sleep 0.2
+        done
+        
+        # Force kill if still running
+        if ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
+          ${pkgs.procps}/bin/pkill -9 plasmashell || true
+          sleep 0.5
+        fi
+        
+        # Use setsid to completely detach plasmashell from the parent session
+        # This prevents SIGHUP when the activation script exits
+        # The --replace flag ensures only one instance runs
+        ${pkgs.util-linux}/bin/setsid "$PLASMA_BIN" --replace </dev/null >>"$LOG" 2>&1 &
+        
+        # Verify it started successfully
+        sleep 1
+        if ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
+          date +"[%F %T] plasmashell restarted successfully with setsid" >> "$LOG"
+        else
+          date +"[%F %T] WARNING: plasmashell failed to start" >> "$LOG"
+        fi
       else
         date +"[%F %T] plasmashell binary not found for --replace" >> "$LOG"
       fi

@@ -11,7 +11,8 @@ let
     "lenovo-legion"
     "gearlever"
     "ayugram"
-    # "qq"
+    "qq"
+    "onlyoffice-desktopeditors"
   ];
 
   nixglApps = import ./nixgl-apps.nix {
@@ -27,8 +28,11 @@ let
     INPUT_METHOD = "fcitx";
   };
 
-  dedupApps = (builtins.attrNames nixglApps.desktopEntries)
-    ++ [ "telegram-desktop" "org.telegram.desktop" "telegram" ];
+  dedupApps = (builtins.attrNames nixglApps.desktopEntries) ++ [
+    "telegram-desktop"
+    "org.telegram.desktop"
+    "telegram"
+  ];
 in
 {
   home.username = "mingshi";
@@ -36,23 +40,24 @@ in
 
   nixpkgs.config.allowUnfree = true;
 
-  home.packages = nixglApps.packages ++ (with pkgs; [
-    onlyoffice-desktopeditors
-    wpsoffice-cn
-    onedrivegui
-    kdePackages.kate
-    nix
-    nixfmt
-    nix-du
-    qtscrcpy
-    xdg-utils
-    vulkan-tools
-    zoom-us
-    nixGLPackage
-    nsc
-    spotify
-    pdfstudioviewer
-  ]);
+  home.packages =
+    nixglApps.packages
+    ++ (with pkgs; [
+      wpsoffice-cn
+      onedrivegui
+      kdePackages.kate
+      nix
+      nixfmt
+      nix-du
+      qtscrcpy
+      xdg-utils
+      vulkan-tools
+      zoom-us
+      nixGLPackage
+      nsc
+      spotify
+      pdfstudioviewer
+    ]);
 
   home.sessionVariables = fcitxEnv // {
     EDITOR = "vim";
@@ -65,8 +70,9 @@ in
     NIXOS_OZONE_WL = "1";
   };
 
-  xdg.configFile."environment.d/99-fcitx5.conf".text = pkgs.lib.concatStringsSep "\n"
-    (pkgs.lib.mapAttrsToList (k: v: "${k}=${v}") fcitxEnv);
+  xdg.configFile."environment.d/99-fcitx5.conf".text = pkgs.lib.concatStringsSep "\n" (
+    pkgs.lib.mapAttrsToList (k: v: "${k}=${v}") fcitxEnv
+  );
 
   xdg.configFile."environment.d/20-electron-wayland.conf".text = ''
     ELECTRON_OZONE_PLATFORM_HINT=wayland
@@ -91,7 +97,8 @@ in
           hmr = "cd ~/.config/home-manager && home-manager switch --rollback";
           legionpk = "lenovo-legion-pkexec";
         };
-      in pkgs.lib.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (k: v: "alias ${k}='${v}'") allAliases);
+      in
+      pkgs.lib.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (k: v: "alias ${k}='${v}'") allAliases);
 
     ".local/bin/lenovo-legion-pkexec" = {
       text = ''
@@ -140,7 +147,7 @@ in
   xdg.configFile."mimeapps.list".force = true;
   xdg.dataFile."applications/mimeapps.list".force = true;
 
-  home.activation.restartPlasma = config.lib.dag.entryAfter ["writeBoundary"] ''
+  home.activation.restartPlasma = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     LOG="$HOME/.cache/hm-restart-plasma.log"
     mkdir -p "$(dirname "$LOG")"
     date +"[%F %T] start restartPlasma" >> "$LOG"
@@ -176,7 +183,7 @@ in
     fi
   '';
 
-  home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter ["reloadSystemd"] ''
+  home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter [ "reloadSystemd" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
 
     # remove duplicates not pointing to nix-profile for selected app names

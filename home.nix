@@ -11,6 +11,7 @@ let
     "lenovo-legion"
     "gearlever"
     "ayugram"
+    # "qq"
   ];
 
   nixglApps = import ./nixgl-apps.nix {
@@ -36,6 +37,7 @@ in
   nixpkgs.config.allowUnfree = true;
 
   home.packages = nixglApps.packages ++ (with pkgs; [
+    wpsoffice-cn
     onedrivegui
     kdePackages.kate
     nix

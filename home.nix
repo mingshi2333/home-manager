@@ -37,6 +37,7 @@ in
   nixpkgs.config.allowUnfree = true;
 
   home.packages = nixglApps.packages ++ (with pkgs; [
+    onlyoffice-desktopeditors
     wpsoffice-cn
     onedrivegui
     kdePackages.kate

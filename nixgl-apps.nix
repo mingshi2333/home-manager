@@ -2,17 +2,12 @@
   config,
   pkgs,
   nixGLBin,
+  fcitxEnv,
   enabledApps ? null,
   ...
 }:
 
 let
-  fcitxEnv = {
-    GTK_IM_MODULE = "fcitx";
-    QT_IM_MODULE = "fcitx";
-    XMODIFIERS = "@im=fcitx";
-    SDL_IM_MODULE = "fcitx";
-  };
 
   wrapWithNixGL =
     {
@@ -247,11 +242,10 @@ let
       name = "qq";
       platform = "wayland";
       desktopName = "QQ (nixGL)";
-      comment = "QQ (nixGL)";
+      comment = "QQ Instant Messaging (nixGL)";
       categories = [
-        "Development"
-        "Utility"
-        "X-Virtualization"
+        "Network"
+        "InstantMessaging"
       ];
       icon = "qq";
     };
@@ -260,12 +254,10 @@ let
       pkg = pkgs.onlyoffice-desktopeditors;
       name = "onlyoffice-desktopeditors";
       platform = "wayland";
-      desktopName = "onlyoffice-desktopeditors (nixGL)";
-      comment = "onlyoffice-desktopeditors (nixGL)";
+      desktopName = "OnlyOffice Desktop Editors (nixGL)";
+      comment = "Office suite for documents, spreadsheets and presentations (nixGL)";
       categories = [
-        "Development"
-        "Utility"
-        "X-Virtualization"
+        "Office"
       ];
       icon = "onlyoffice-desktopeditors";
     };
@@ -306,6 +298,41 @@ let
       icon = "ayugram";
       mimeTypes = [ "x-scheme-handler/tg" ];
       dbusService = "org.ayugram.desktop.service";
+    };
+
+    readest = mkNixGLApp {
+      pkg = pkgs.readest;
+      name = "readest";
+      platform = "wayland";
+      desktopName = "Readest (nixGL)";
+      comment = "Modern ebook reader supporting EPUB, PDF, MOBI and more (nixGL)";
+      categories = [
+        "Office"
+        "Viewer"
+      ];
+      icon = "readest";
+      mimeTypes = [
+        # EPUB formats
+        "application/epub+zip"
+        # PDF
+        "application/pdf"
+        # MOBI and AZW formats
+        "application/x-mobipocket-ebook"
+        "application/vnd.amazon.ebook"
+        "application/vnd.amazon.mobi8-ebook"
+        # Comic book formats
+        "application/x-cbz"
+        "application/x-cbr"
+        "application/x-cb7"
+        "application/x-cbt"
+        # Fiction Book
+        "application/x-fictionbook+xml"
+        "application/x-zip-compressed-fb2"
+        # Other ebook formats
+        "application/x-sony-bbeb"
+        "text/plain"
+      ];
+      execArgs = "%U";
     };
   };
 

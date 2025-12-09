@@ -1,4 +1,10 @@
-{ config, pkgs, nixglApps, dedupApps, ... }:
+{
+  config,
+  pkgs,
+  nixglApps,
+  dedupApps,
+  ...
+}:
 
 {
   xdg.enable = true;

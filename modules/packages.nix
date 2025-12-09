@@ -1,4 +1,10 @@
-{ config, pkgs, nixglApps, nixGLPackage, ... }:
+{
+  config,
+  pkgs,
+  nixglApps,
+  nixGLPackage,
+  ...
+}:
 
 {
   home.packages =
@@ -16,6 +22,8 @@
       nix
       nixfmt
       nix-du
+      nix-index # Fast file and package search
+      nix-tree # Visualize dependency trees
 
       # Utilities
       qtscrcpy

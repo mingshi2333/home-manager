@@ -1,11 +1,12 @@
 {
-  description = "My personal NixOS configuration flake";
+  description = "Personal home-manager configuration with modular structure";
 
   inputs = {
-    # Nixpkgs (Nix Packages collection)
+    # Using nixos-unstable for latest packages
+    # Note: Unstable is preferred to avoid package breakage from version locks
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # Home Manager
+    # Home Manager for declarative user environment management
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -14,19 +15,24 @@
 
   outputs = { self, nixpkgs, home-manager, ... }:
     let
-      # 您需要管理的系统架构
+      # System architecture
       system = "x86_64-linux";
-      # 您的用户名
+
+      # Username - can be overridden if needed
       username = "mingshi";
     in
     {
       # Home Manager Configuration
       homeConfigurations."${username}" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
+
+        # Extra arguments passed to all modules
         extraSpecialArgs = {
-        }; # 可选，用于传递额外参数
+          inherit username;
+        };
+
         modules = [
-          # 在这里引入您的 home.nix 文件
+          # Main configuration file (imports all modular configs)
           ./home.nix
         ];
       };

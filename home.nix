@@ -42,6 +42,7 @@ in
     onedrivegui
     kdePackages.kate
     nix
+    nixfmt
     nix-du
     qtscrcpy
     xdg-utils

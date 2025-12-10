@@ -250,22 +250,10 @@ let
       icon = "qq";
     };
 
-    onlyoffice-desktopeditors = mkNixGLApp {
-      pkg = pkgs.onlyoffice-desktopeditors;
-      name = "onlyoffice-desktopeditors";
-      platform = "wayland";
-      desktopName = "OnlyOffice Desktop Editors (nixGL)";
-      comment = "Office suite for documents, spreadsheets and presentations (nixGL)";
-      categories = [
-        "Office"
-      ];
-      icon = "onlyoffice-desktopeditors";
-    };
-
     zotero = mkNixGLApp {
       pkg = pkgs.zotero;
       name = "zotero";
-      platform = "wayland";
+      platform = "x11";
       extraEnv = {
         GTK_IM_MODULE_FILE = "${config.home.homeDirectory}/.nix-profile/etc/gtk-3.0/immodules.cache";
       };
@@ -300,40 +288,40 @@ let
       dbusService = "org.ayugram.desktop.service";
     };
 
-    readest = mkNixGLApp {
-      pkg = pkgs.readest;
-      name = "readest";
-      platform = "x11";
-      desktopName = "Readest (nixGL)";
-      comment = "Modern ebook reader supporting EPUB, PDF, MOBI and more (nixGL)";
-      categories = [
-        "Office"
-        "Viewer"
-      ];
-      icon = "readest";
-      mimeTypes = [
-        # EPUB formats
-        "application/epub+zip"
-        # PDF
-        "application/pdf"
-        # MOBI and AZW formats
-        "application/x-mobipocket-ebook"
-        "application/vnd.amazon.ebook"
-        "application/vnd.amazon.mobi8-ebook"
-        # Comic book formats
-        "application/x-cbz"
-        "application/x-cbr"
-        "application/x-cb7"
-        "application/x-cbt"
-        # Fiction Book
-        "application/x-fictionbook+xml"
-        "application/x-zip-compressed-fb2"
-        # Other ebook formats
-        "application/x-sony-bbeb"
-        "text/plain"
-      ];
-      execArgs = "%U";
-    };
+    # readest = mkNixGLApp {
+    #   pkg = pkgs.readest;
+    #   name = "readest";
+    #   platform = "wayland";
+    #   desktopName = "Readest (nixGL)";
+    #   comment = "Modern ebook reader supporting EPUB, PDF, MOBI and more (nixGL)";
+    #   categories = [
+    #     "Office"
+    #     "Viewer"
+    #   ];
+    #   icon = "readest";
+    #   mimeTypes = [
+    #     # EPUB formats
+    #     "application/epub+zip"
+    #     # PDF
+    #     "application/pdf"
+    #     # MOBI and AZW formats
+    #     "application/x-mobipocket-ebook"
+    #     "application/vnd.amazon.ebook"
+    #     "application/vnd.amazon.mobi8-ebook"
+    #     # Comic book formats
+    #     "application/x-cbz"
+    #     "application/x-cbr"
+    #     "application/x-cb7"
+    #     "application/x-cbt"
+    #     # Fiction Book
+    #     "application/x-fictionbook+xml"
+    #     "application/x-zip-compressed-fb2"
+    #     # Other ebook formats
+    #     "application/x-sony-bbeb"
+    #     "text/plain"
+    #   ];
+    #   execArgs = "%U";
+    # };
   };
 
 in

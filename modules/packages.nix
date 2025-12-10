@@ -13,7 +13,6 @@
       # Office and productivity
       wpsoffice-cn
       onedrivegui
-      pdfstudioviewer
 
       # Text editors
       kdePackages.kate
@@ -26,7 +25,6 @@
       nix-tree # Visualize dependency trees
 
       # Utilities
-      qtscrcpy
       xdg-utils
       vulkan-tools
       nsc

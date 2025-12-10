@@ -14,8 +14,7 @@ let
     "gearlever"
     "ayugram"
     "qq"
-    "onlyoffice-desktopeditors"
-    "readest"
+    # "readest"
   ];
 
   # Fcitx environment variables (shared across modules)

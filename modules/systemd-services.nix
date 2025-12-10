@@ -11,6 +11,50 @@
       Service = {
         Type = "oneshot";
         ExecStart = "${pkgs.kdePackages.kservice}/bin/kbuildsycoca6 --noincremental";
+        ExecStartPost = pkgs.writeShellScript "restart-plasmashell" ''
+          # Find plasmashell binary
+          PLASMA_BIN=""
+          for path in /usr/bin/plasmashell ${pkgs.libsForQt5.plasma-workspace or ""}/bin/plasmashell; do
+            if [ -x "$path" ]; then
+              PLASMA_BIN="$path"
+              break
+            fi
+          done
+
+          if [ -z "$PLASMA_BIN" ]; then
+            echo "plasmashell binary not found"
+            exit 0
+          fi
+
+          # Kill all plasmashell processes
+          ${pkgs.procps}/bin/pkill plasmashell || true
+          
+          # Wait for processes to fully terminate (with timeout)
+          for i in {1..10}; do
+            if ! ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
+              break
+            fi
+            sleep 0.2
+          done
+          
+          # Force kill if still running
+          if ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
+            ${pkgs.procps}/bin/pkill -9 plasmashell || true
+            sleep 0.5
+          fi
+          
+          # Use setsid to completely detach plasmashell from the parent session
+          # This prevents SIGHUP when the service exits
+          ${pkgs.util-linux}/bin/setsid "$PLASMA_BIN" --replace </dev/null >/dev/null 2>&1 &
+          
+          # Verify it started successfully
+          sleep 1
+          if ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
+            echo "plasmashell restarted successfully"
+          else
+            echo "WARNING: plasmashell failed to start"
+          fi
+        '';
         RemainAfterExit = false;
       };
     };
@@ -28,7 +72,7 @@
           while true; do
             if ! pgrep -x plasmashell > /dev/null; then
               echo "Plasmashell not running, attempting restart..."
-              ${pkgs.libsForQt5.plasma-workspace}/bin/plasmashell &
+              plasmashell &
             fi
             sleep 30
           done

@@ -303,7 +303,7 @@ let
     readest = mkNixGLApp {
       pkg = pkgs.readest;
       name = "readest";
-      platform = "wayland";
+      platform = "x11";
       desktopName = "Readest (nixGL)";
       comment = "Modern ebook reader supporting EPUB, PDF, MOBI and more (nixGL)";
       categories = [

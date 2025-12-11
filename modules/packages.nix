@@ -28,9 +28,15 @@
       xdg-utils
       vulkan-tools
       nsc
+      mamba-cpp
+      micromamba
+#      carapace
+      pixi
+      vivid
+      
+      
 
       # Communication and media
-      zoom-us
       spotify
 
       # nixGL package

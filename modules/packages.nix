@@ -30,11 +30,9 @@
       nsc
       mamba-cpp
       micromamba
-#      carapace
+      #      carapace
       pixi
       vivid
-      
-      
 
       # Communication and media
       spotify

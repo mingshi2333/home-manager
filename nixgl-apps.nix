@@ -237,6 +237,19 @@ let
       ];
       icon = "podman-desktop";
     };
+    cozy = mkNixGLApp {
+      pkg = pkgs.cozy;
+      name = "cozy";
+      platform = "x11";
+      desktopName = "cozy (nixGL)";
+      comment = "cozy (nixGL)";
+      categories = [
+        "Development"
+        "Utility"
+        "X-Virtualization"
+      ];
+      icon = "cozy";
+    };
     qq = mkNixGLApp {
       pkg = pkgs.qq;
       name = "qq";

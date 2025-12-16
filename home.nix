@@ -14,6 +14,7 @@ let
     "gearlever"
     "ayugram"
     "qq"
+    "cozy"
     # "readest"
   ];
 

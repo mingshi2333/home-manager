@@ -262,6 +262,18 @@ let
       ];
       icon = "qq";
     };
+    element = mkNixGLApp {
+      pkg = pkgs.element-desktop;
+      name = "element-desktop";
+      platform = "wayland";
+      desktopName = "element-desktop (nixGL)";
+      comment = "element-desktop (nixGL)";
+      categories = [
+        "Network"
+        "InstantMessaging"
+      ];
+      icon = "element-desktop";
+    };
 
     zotero = mkNixGLApp {
       pkg = pkgs.zotero;

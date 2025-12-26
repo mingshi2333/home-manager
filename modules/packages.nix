@@ -34,6 +34,8 @@
       pixi
       vivid
 
+      tracy-glfw
+
       # Communication and media
       spotify
 

@@ -1,10 +1,22 @@
 { config, pkgs, ... }:
 
 let
-  # nixGL configuration
-  nixglPackages = pkgs.callPackage ./nixgl-noimpure.nix { };
-  nixGLPackage = nixglPackages.auto.nixGLDefault;
-  nixGLBin = "${nixGLPackage}/bin/nixGL";
+  # nixGL configuration - use local nixgl with explicit version file
+  nvidiaVersionFile = ./nvidia/version;
+  nvidiaVersion =
+    let
+      versionMatch =
+        builtins.match ".*  ([0-9]+\\.[0-9]+\\.[0-9]+)  .*" (builtins.readFile nvidiaVersionFile);
+    in
+      if versionMatch != null then
+        builtins.head versionMatch
+      else
+        throw "Unable to parse NVIDIA version from nvidia/version";
+  nixglPackages = pkgs.callPackage ./nixgl-noimpure.nix {
+    inherit nvidiaVersionFile;
+  };
+  nixGLPackage = nixglPackages.auto.nixGLNvidia;
+  nixGLBin = "${nixGLPackage}/bin/nixGLNvidia-${nvidiaVersion}";
 
   # Enabled nixGL applications
   enabledNixglApps = [
@@ -16,6 +28,7 @@ let
     "qq"
     "cozy"
     "element"
+    "tracy"
     # "readest"
   ];
 
@@ -44,6 +57,13 @@ let
     "telegram-desktop"
     "org.telegram.desktop"
     "telegram"
+  ];
+  updateNvidiaVersionCmd = pkgs.lib.concatStringsSep " " [
+    "if [ -r /proc/driver/nvidia/version ]; then"
+    "if [ ! -f nvidia/version ] || ! cmp -s /proc/driver/nvidia/version nvidia/version; then"
+    "cat /proc/driver/nvidia/version > nvidia/version;"
+    "echo \"[hms] nvidia/version updated\";"
+    "fi; fi"
   ];
 in
 {
@@ -84,9 +104,9 @@ in
     ".zsh_aliases".text =
       let
         allAliases = nixglApps.shellAliases // {
-          hms = "cd ~/.config/home-manager && home-manager switch";
-          hmu = "cd ~/.config/home-manager && nix flake update && home-manager switch";
-          hmr = "cd ~/.config/home-manager && home-manager switch --rollback";
+          hms = "cd ~/.config/home-manager && { ${updateNvidiaVersionCmd}; home-manager switch --impure; }";
+          hmu = "cd ~/.config/home-manager && { ${updateNvidiaVersionCmd}; nix flake update && home-manager switch --impure; }";
+          hmr = "cd ~/.config/home-manager && home-manager switch --impure --rollback";
         };
       in
       pkgs.lib.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (k: v: "alias ${k}='${v}'") allAliases);

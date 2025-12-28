@@ -347,6 +347,20 @@ let
     #   ];
     #   execArgs = "%U";
     # };
+
+    tracy = mkNixGLApp {
+      pkg = pkgs.tracy;
+      name = "tracy";
+      platform = "x11";
+      desktopName = "Tracy Profiler (nixGL)";
+      comment = "Real-time frame profiler (nixGL)";
+      categories = [
+        "Development"
+        "Debugger"
+        "Profiling"
+      ];
+      icon = "tracy";
+    };
   };
 
 in

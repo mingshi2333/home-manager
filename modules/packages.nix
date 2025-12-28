@@ -33,9 +33,7 @@
       #      carapace
       pixi
       vivid
-
-      tracy-glfw
-
+      # tracy - moved to nixgl-apps.nix (requires GPU)
       # Communication and media
       spotify
 

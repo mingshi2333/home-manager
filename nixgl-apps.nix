@@ -213,6 +213,9 @@ let
     gearlever = mkNixGLApp {
       pkg = pkgs.gearlever;
       name = "gearlever";
+      extraEnv = {
+        GSK_RENDERER = "gl";
+      };
       desktopName = "Gear Lever (nixGL)";
       comment = "Manage AppImages with Gear Lever (wrapped by nixGL)";
       categories = [

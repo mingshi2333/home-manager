@@ -70,6 +70,30 @@
       done
     fi
 
+    # Skip expensive refresh when desktop entries are unchanged
+    hash_file="$HOME/.cache/hm-desktop-entries.sha256"
+    tmp_hash=""
+    if command -v ${pkgs.coreutils}/bin/sha256sum >/dev/null 2>&1; then
+      tmp_hash=$(find "$HOME/.local/share/applications" "$HOME/.nix-profile/share/applications" \
+        -maxdepth 1 -type f -name "*.desktop" -print0 2>/dev/null \
+        | sort -z \
+        | xargs -0 ${pkgs.coreutils}/bin/sha256sum 2>/dev/null \
+        | ${pkgs.coreutils}/bin/sha256sum \
+        | ${pkgs.coreutils}/bin/cut -d ' ' -f 1 || true)
+    fi
+
+    if [ -n "$tmp_hash" ] && [ -f "$hash_file" ]; then
+      prev_hash=$(cat "$hash_file" 2>/dev/null || true)
+      if [ "$tmp_hash" = "$prev_hash" ]; then
+        exit 0
+      fi
+    fi
+
+    if [ -n "$tmp_hash" ]; then
+      $DRY_RUN_CMD mkdir -p "$HOME/.cache"
+      $DRY_RUN_CMD printf "%s" "$tmp_hash" > "$hash_file"
+    fi
+
     if [ -x "${pkgs.desktop-file-utils}/bin/update-desktop-database" ]; then
       $DRY_RUN_CMD ${pkgs.desktop-file-utils}/bin/update-desktop-database \
         "$HOME/.local/share/applications" 2>/dev/null || true
@@ -83,51 +107,5 @@
         $DRY_RUN_CMD kbuildsycoca5 2>/dev/null || true
     fi
 
-    # Restart plasmashell to reload the application database
-    PLASMA_BIN=""
-    for path in /usr/bin/plasmashell ${pkgs.libsForQt5.plasma-workspace or ""}/bin/plasmashell; do
-      if [ -x "$path" ]; then
-        PLASMA_BIN="$path"
-        break
-      fi
-    done
-
-    if [ -n "$PLASMA_BIN" ]; then
-      # Reload systemd user environment to pick up new environment.d configs
-      ${pkgs.systemd}/bin/systemctl --user daemon-reload || true
-      
-      # Import critical environment variables into systemd user session
-      export PATH="${config.home.homeDirectory}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin"
-      export XDG_DATA_DIRS="${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share"
-      ${pkgs.systemd}/bin/systemctl --user import-environment PATH XDG_DATA_DIRS || true
-      
-      # Kill all plasmashell processes
-      ${pkgs.procps}/bin/pkill plasmashell || true
-      
-      # Wait for processes to fully terminate (with timeout)
-      for i in {1..10}; do
-        if ! ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
-          break
-        fi
-        sleep 0.2
-      done
-      
-      # Force kill if still running
-      if ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
-        ${pkgs.procps}/bin/pkill -9 plasmashell || true
-        sleep 0.5
-      fi
-      
-      # Use systemd-run to start plasmashell with proper environment from systemd user session
-      ${pkgs.systemd}/bin/systemd-run --user --scope --slice=app.slice "$PLASMA_BIN" --replace </dev/null >/dev/null 2>&1 &
-      
-      # Verify it started successfully
-      sleep 1
-      if ${pkgs.procps}/bin/pgrep plasmashell >/dev/null 2>&1; then
-        echo "plasmashell restarted successfully"
-      else
-        echo "WARNING: plasmashell failed to start"
-      fi
-    fi
   '';
 }

@@ -68,33 +68,26 @@ let
 in
 {
   # Basic user configuration
-  home.username = "mingshi";
-  home.homeDirectory = "/home/mingshi";
-  home.stateVersion = "23.11";
-
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
   # Import modular configurations
   imports = [
-    ./modules/fcitx.nix
-    ./modules/environment.nix
-    ./modules/plasma.nix
-    ./modules/lenovo-legion.nix
-    (import ./modules/packages.nix {
-      inherit
-        config
-        pkgs
-        nixglApps
-        nixGLPackage
-        ;
-    })
-    (import ./modules/desktop-entries.nix {
+    ./profiles/base.nix
+    (import ./profiles/gui.nix {
       inherit
         config
         pkgs
         nixglApps
         dedupApps
+        ;
+    })
+    (import ./profiles/packages.nix {
+      inherit
+        config
+        pkgs
+        nixglApps
+        nixGLPackage
         ;
     })
   ];
@@ -110,6 +103,17 @@ in
         };
       in
       pkgs.lib.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (k: v: "alias ${k}='${v}'") allAliases);
+
+    ".config/home-manager/zsh-extra.sh".text = ''
+      # Prefer system binaries; keep Nix paths at the end
+      if [ -n "$ZSH_VERSION" ]; then
+        path=(/usr/local/bin /usr/bin /usr/local/sbin /usr/sbin ''${path})
+        path=(''${path:#''${HOME}/.nix-profile/bin} ''${path:#/nix/var/nix/profiles/default/bin})
+        path+=("''${HOME}/.nix-profile/bin" /nix/var/nix/profiles/default/bin)
+        typeset -U path
+        export PATH
+      fi
+    '';
   };
 
   # Enable home-manager

@@ -11,9 +11,9 @@
   };
 
   # XDG environment.d configuration for systemd user services
-  # PATH must include both nix-profile/bin AND system paths for plasmashell
+  # PATH must include both system paths and nix-profile/bin
   xdg.configFile."environment.d/05-nix-path.conf".text = ''
-    PATH=${config.home.homeDirectory}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
+    PATH=/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:${config.home.homeDirectory}/.nix-profile/bin:/nix/var/nix/profiles/default/bin
   '';
 
   xdg.configFile."environment.d/10-xdg-data-dirs.conf".text = ''

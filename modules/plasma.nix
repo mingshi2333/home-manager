@@ -1,7 +1,7 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
-  home.activation.restartPlasma = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.restartPlasma = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     LOG="$HOME/.cache/hm-restart-plasma.log"
     mkdir -p "$(dirname "$LOG")"
 
@@ -12,6 +12,11 @@
     fi
 
     date +"[%F %T] start restartPlasma" >> "$LOG"
+
+    if [ "''${HM_PLASMA_RESTART:-0}" != "1" ]; then
+      date +"[%F %T] HM_PLASMA_RESTART not set, skip" >> "$LOG"
+      exit 0
+    fi
 
     # Prefer systemd user service if present
     if systemctl --user list-units --type=service 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q plasma-plasmashell.service; then

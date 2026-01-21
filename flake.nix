@@ -19,7 +19,14 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, nixgl, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      nixgl,
+      ...
+    }:
     let
       # System architecture
       system = "x86_64-linux";
@@ -40,8 +47,8 @@
         };
 
         modules = [
-          # Main configuration file (imports all modular configs)
-          ./home.nix
+          # Host-specific entry point
+          ./hosts/mingshi/home.nix
         ];
       };
     };

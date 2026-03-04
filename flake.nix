@@ -34,7 +34,17 @@
       # Username - can be overridden if needed
       username = "mingshi";
 
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [
+          # Temporary workaround: dwarfs-0.12.4 fails with boost 1.89 (missing boost_system).
+          (final: prev: {
+            dwarfs = prev.dwarfs.override {
+              boost = prev.boost187;
+            };
+          })
+        ];
+      };
     in
     {
       # Home Manager Configuration

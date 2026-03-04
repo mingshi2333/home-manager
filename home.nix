@@ -136,13 +136,16 @@ in
   home.file = nixglApps.binScripts // {
     ".zsh_aliases".text =
       let
+        escapeAliasValue = v: builtins.replaceStrings [ "'" ] [ "'\\''" ] v;
         allAliases = nixglApps.shellAliases // {
           hms = "cd ~/.config/home-manager && { ${updateNvidiaMetadataCmd}; home-manager switch --impure; }";
           hmu = "cd ~/.config/home-manager && { ${updateNvidiaMetadataCmd}; nix flake update && home-manager switch --impure; }";
           hmr = "cd ~/.config/home-manager && home-manager switch --impure --rollback";
         };
       in
-      pkgs.lib.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (k: v: "alias ${k}='${v}'") allAliases);
+      pkgs.lib.concatStringsSep "\n" (
+        pkgs.lib.mapAttrsToList (k: v: "alias ${k}='${escapeAliasValue v}'") allAliases
+      );
 
     ".config/home-manager/zsh-extra.sh".text = ''
       # Prefer system binaries; keep Nix paths at the end

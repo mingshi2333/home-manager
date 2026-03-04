@@ -1,1 +1,1 @@
-/nix/store/x8dalaigyj1qzvc0q89s0nw8x9cgflb0-home-manager-files/.config/home-manager/zsh-extra.sh
+/nix/store/5xabb5yigw01am2kaqm1fdlrcdncfv52-home-manager-files/.config/home-manager/zsh-extra.sh

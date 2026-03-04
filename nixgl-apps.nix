@@ -265,6 +265,20 @@ let
       ];
       icon = "qq";
     };
+
+    wechat = mkNixGLApp {
+      pkg = pkgs.wechat;
+      name = "wechat";
+      platform = "wayland";
+      desktopName = "wechat (nixGL)";
+      comment = "wechat Instant Messaging (nixGL)";
+      categories = [
+        "Network"
+        "InstantMessaging"
+      ];
+      icon = "wechat";
+    };
+
     element = mkNixGLApp {
       pkg = pkgs.element-desktop;
       name = "element-desktop";

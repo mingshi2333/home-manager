@@ -1,24 +1,17 @@
 { config, pkgs, ... }:
 
+let
+  fcitxEnv = import ./fcitx-env.nix;
+in
 {
-  # Fcitx5 input method environment variables
-  # Used across the system for consistent input method support
-  home.sessionVariables = {
-    GTK_IM_MODULE = "fcitx";
-    QT_IM_MODULE = "fcitx";
-    XMODIFIERS = "@im=fcitx";
-    SDL_IM_MODULE = "fcitx";
-    INPUT_METHOD = "fcitx";
+  home.sessionVariables = fcitxEnv // {
     GTK_IM_MODULE_FILE = "${config.home.homeDirectory}/.nix-profile/etc/gtk-3.0/immodules.cache";
     GTK_PATH = "${config.home.homeDirectory}/.nix-profile/lib/gtk-3.0";
   };
 
-  # Export fcitx environment for systemd user services
-  xdg.configFile."environment.d/99-fcitx5.conf".text = ''
-    GTK_IM_MODULE=fcitx
-    QT_IM_MODULE=fcitx
-    XMODIFIERS=@im=fcitx
-    SDL_IM_MODULE=fcitx
-    INPUT_METHOD=fcitx
-  '';
+  xdg.configFile."environment.d/99-fcitx5.conf".text =
+    pkgs.lib.concatStringsSep "\n" (
+      pkgs.lib.mapAttrsToList (name: value: "${name}=${value}") fcitxEnv
+    )
+    + "\n";
 }

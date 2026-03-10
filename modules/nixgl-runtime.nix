@@ -1,21 +1,14 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   types = lib.types;
   nvidiaVersionFile = ../nvidia/version;
   nvidiaHashFile = ../nvidia/hash;
-  enabledNixglApps = [
-    "podman-desktop"
-    "zotero"
-    "lenovo-legion"
-    "gearlever"
-    "ayugram"
-    "qq"
-    "cozy"
-    "element"
-    "tracy"
-    "wechat"
-  ];
   fcitxEnv = import ./fcitx-env.nix;
   nvidiaVersion =
     let
@@ -51,7 +44,6 @@ let
       nixGLBin
       fcitxEnv
       ;
-    enabledApps = enabledNixglApps;
   };
   dedupApps = (builtins.attrNames nixglApps.desktopEntries) ++ [
     "telegram-desktop"
@@ -112,8 +104,13 @@ in
   };
 
   config.local.nixgl = {
-    enabledApps = enabledNixglApps;
-    inherit fcitxEnv nvidiaVersion nvidiaHash dedupApps;
+    enabledApps = nixglApps.enabledApps;
+    inherit
+      fcitxEnv
+      nvidiaVersion
+      nvidiaHash
+      dedupApps
+      ;
     package = nixGLPackage;
     bin = nixGLBin;
     appPackages = nixglApps.packages;

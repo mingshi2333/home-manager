@@ -1,43 +1,25 @@
-{
-  config,
-  pkgs,
-  nixglApps,
-  nixGLPackage,
-  ...
-}:
+{ config, pkgs, ... }:
 
 {
   home.packages =
-    nixglApps.packages
+    config.local.nixgl.appPackages
     ++ (with pkgs; [
-      # Office and productivity
       wpsoffice-cn
       onedrivegui
-
-      # Text editors
       kdePackages.kate
-
-      # Nix tools
       nix
       nixfmt
       nix-du
-      nix-index # Fast file and package search
-      nix-tree # Visualize dependency trees
-
-      # Utilities
+      nix-index
+      nix-tree
       xdg-utils
       vulkan-tools
       nsc
       mamba-cpp
       micromamba
-      #      carapace
       pixi
       vivid
-      # tracy - moved to nixgl-apps.nix (requires GPU)
-      # Communication and media
       spotify
-
-      # nixGL package
-      nixGLPackage
+      config.local.nixgl.package
     ]);
 }

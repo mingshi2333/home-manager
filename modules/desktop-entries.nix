@@ -1,42 +1,29 @@
-{
-  config,
-  pkgs,
-  nixglApps,
-  dedupApps,
-  ...
-}:
+{ config, pkgs, ... }:
 
 {
   xdg.enable = true;
 
   xdg.mimeApps = {
     enable = true;
-    defaultApplications = nixglApps.mimeAssociations // {
+    defaultApplications = config.local.nixgl.mimeAssociations // {
       "x-scheme-handler/http" = [ "chromium-browser.desktop" ];
       "x-scheme-handler/https" = [ "chromium-browser.desktop" ];
       "application/pdf" = [ "chromium-browser.desktop" ];
     };
   };
 
-  # Only add custom desktop entries for nixGL apps, don't override system entries
-  xdg.desktopEntries = nixglApps.desktopEntries;
+  xdg.desktopEntries = config.local.nixgl.desktopEntries;
 
-  # Don't force override - let system MIME associations coexist
-  # xdg.configFile."mimeapps.list".force = true;
-  # xdg.dataFile."applications/mimeapps.list".force = true;
-
-  # Desktop database refresh and deduplication
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter [ "reloadSystemd" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
 
-    # remove duplicates not pointing to nix-profile for selected app names
-    for app in ${pkgs.lib.concatStringsSep " " dedupApps}; do
+    for app in ${pkgs.lib.concatStringsSep " " config.local.nixgl.dedupApps}; do
       for desktop in $HOME/.local/share/applications/$app*.desktop; do
         [ -e "$desktop" ] || continue
         if [ -L "$desktop" ]; then
           target=$(readlink -f "$desktop")
           case "$target" in
-            $HOME/.nix-profile/share/applications/*) ;; # keep nix-profile entries
+            $HOME/.nix-profile/share/applications/*) ;;
             *) $DRY_RUN_CMD rm -f "$desktop" ;;
           esac
         else
@@ -45,7 +32,6 @@
       done
     done
 
-    # cleanup stale links
     if [ -d "$HOME/.local/share/applications" ]; then
       for desktop in $HOME/.local/share/applications/*.desktop; do
         [ -e "$desktop" ] || continue
@@ -70,7 +56,6 @@
       done
     fi
 
-    # Skip expensive refresh when desktop entries are unchanged
     hash_file="$HOME/.cache/hm-desktop-entries.sha256"
     tmp_hash=""
     if command -v ${pkgs.coreutils}/bin/sha256sum >/dev/null 2>&1; then
@@ -106,6 +91,5 @@
       XDG_DATA_DIRS="${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share" \
         $DRY_RUN_CMD kbuildsycoca5 2>/dev/null || true
     fi
-
   '';
 }

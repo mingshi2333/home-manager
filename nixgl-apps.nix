@@ -191,6 +191,117 @@ let
           { };
     };
 
+  mkCatalogNixGLApp =
+    catalogId:
+    {
+      enable ? true,
+      name ? catalogId,
+      ...
+    }@args:
+    {
+      inherit enable;
+      app =
+        (mkNixGLApp (
+          builtins.removeAttrs args [ "enable" ]
+          // {
+            inherit name;
+          }
+        ))
+        // {
+          desktopId = name;
+        };
+    };
+
+  mkStandardNixGLApp =
+    catalogId:
+    {
+      enable ? true,
+      name ? catalogId,
+      pkg,
+      desktopName ? "${name} (nixGL)",
+      comment ? desktopName,
+      icon ? name,
+      ...
+    }@args:
+    mkCatalogNixGLApp catalogId (
+      builtins.removeAttrs args [ "enable" ]
+      // {
+        inherit
+          enable
+          name
+          pkg
+          desktopName
+          comment
+          icon
+          ;
+      }
+    );
+
+  mkCustomApp =
+    catalogId:
+    {
+      enable ? true,
+      package ? null,
+      shellAliases ? { },
+      binScripts ? { },
+      desktopId ? catalogId,
+      desktopEntry,
+      mimeAssoc ? { },
+    }:
+    {
+      inherit enable;
+      app = {
+        inherit
+          package
+          shellAliases
+          binScripts
+          desktopId
+          desktopEntry
+          mimeAssoc
+          ;
+      };
+    };
+
+  standardApp =
+    args@{
+      enable ? true,
+      ...
+    }:
+    {
+      inherit enable;
+      render = catalogId: (mkStandardNixGLApp catalogId (builtins.removeAttrs args [ "enable" ])).app;
+    };
+
+  customApp =
+    args@{
+      enable ? true,
+      ...
+    }:
+    {
+      inherit enable;
+      render = catalogId: (mkCustomApp catalogId (builtins.removeAttrs args [ "enable" ])).app;
+    };
+
+  lenovoLegionBinScripts = {
+    ".local/bin/lenovo-legion-pkexec" = {
+      text = ''
+        #!${pkgs.bash}/bin/bash
+        export SHELL=/bin/bash
+        exec ${pkgs.util-linux}/bin/pkexec ${pkgs.lenovo-legion}/bin/legion_cli "$@"
+      '';
+      executable = true;
+    };
+
+    ".local/bin/lenovo-legion-gui-pkexec" = {
+      text = ''
+        #!${pkgs.bash}/bin/bash
+        export SHELL=/bin/bash
+        exec ${pkgs.util-linux}/bin/pkexec ${pkgs.lenovo-legion}/bin/legion_gui "$@"
+      '';
+      executable = true;
+    };
+  };
+
   apps = {
 
     # telegram = mkNixGLApp {
@@ -210,9 +321,8 @@ let
     #   dbusService = "org.telegram.desktop.service";
     # };
 
-    gearlever = mkNixGLApp {
+    gearlever = standardApp {
       pkg = pkgs.gearlever;
-      name = "gearlever";
       extraEnv = {
         GSK_RENDERER = "gl";
       };
@@ -227,9 +337,8 @@ let
       execArgs = "%U";
     };
 
-    podman-desktop = mkNixGLApp {
+    podman-desktop = standardApp {
       pkg = pkgs.podman-desktop;
-      name = "podman-desktop";
       platform = "wayland";
       desktopName = "Podman Desktop (nixGL)";
       comment = "Podman Desktop (nixGL)";
@@ -240,9 +349,9 @@ let
       ];
       icon = "podman-desktop";
     };
-    cozy = mkNixGLApp {
+
+    cozy = standardApp {
       pkg = pkgs.cozy;
-      name = "cozy";
       platform = "x11";
       desktopName = "cozy (nixGL)";
       comment = "cozy (nixGL)";
@@ -253,9 +362,9 @@ let
       ];
       icon = "cozy";
     };
-    qq = mkNixGLApp {
+
+    qq = standardApp {
       pkg = pkgs.qq;
-      name = "qq";
       platform = "wayland";
       desktopName = "QQ (nixGL)";
       comment = "QQ Instant Messaging (nixGL)";
@@ -266,9 +375,8 @@ let
       icon = "qq";
     };
 
-    wechat = mkNixGLApp {
+    wechat = standardApp {
       pkg = pkgs.wechat;
-      name = "wechat";
       platform = "wayland";
       desktopName = "wechat (nixGL)";
       comment = "wechat Instant Messaging (nixGL)";
@@ -279,22 +387,8 @@ let
       icon = "wechat";
     };
 
-    element = mkNixGLApp {
-      pkg = pkgs.element-desktop;
-      name = "element-desktop";
-      platform = "wayland";
-      desktopName = "element-desktop (nixGL)";
-      comment = "element-desktop (nixGL)";
-      categories = [
-        "Network"
-        "InstantMessaging"
-      ];
-      icon = "element-desktop";
-    };
-
-    zotero = mkNixGLApp {
+    zotero = standardApp {
       pkg = pkgs.zotero;
-      name = "zotero";
       platform = "x11";
       extraEnv = {
         GTK_IM_MODULE_FILE = "${config.home.homeDirectory}/.nix-profile/etc/gtk-3.0/immodules.cache";
@@ -307,7 +401,33 @@ let
       ];
       icon = "zotero";
     };
-    ayugram = mkNixGLApp {
+
+    tracy = standardApp {
+      pkg = pkgs.tracy;
+      platform = "x11";
+      desktopName = "Tracy Profiler (nixGL)";
+      comment = "Real-time frame profiler (nixGL)";
+      categories = [
+        "Development"
+        "Debugger"
+        "Profiling"
+      ];
+      icon = "tracy";
+    };
+    element = standardApp {
+      pkg = pkgs.element-desktop;
+      name = "element-desktop";
+      platform = "wayland";
+      desktopName = "element-desktop (nixGL)";
+      comment = "element-desktop (nixGL)";
+      categories = [
+        "Network"
+        "InstantMessaging"
+      ];
+      icon = "element-desktop";
+    };
+
+    ayugram = standardApp {
       pkg = pkgs.ayugram-desktop;
       name = "ayugram-desktop";
       binary = "AyuGram";
@@ -328,6 +448,26 @@ let
       icon = "ayugram";
       mimeTypes = [ "x-scheme-handler/tg" ];
       dbusService = "org.ayugram.desktop.service";
+    };
+
+    lenovo-legion = customApp {
+      shellAliases = {
+        legionpk = "lenovo-legion-pkexec";
+      };
+      binScripts = lenovoLegionBinScripts;
+      desktopId = "lenovo-legion-gui-pkexec";
+      desktopEntry = {
+        name = "Lenovo Legion Control (pkexec)";
+        exec = "${config.home.homeDirectory}/.local/bin/lenovo-legion-gui-pkexec";
+        terminal = false;
+        type = "Application";
+        comment = "Lenovo Legion Control via pkexec";
+        categories = [
+          "Utility"
+          "System"
+        ];
+        icon = "computer";
+      };
     };
 
     # readest = mkNixGLApp {
@@ -364,37 +504,33 @@ let
     #   ];
     #   execArgs = "%U";
     # };
-
-    tracy = mkNixGLApp {
-      pkg = pkgs.tracy;
-      name = "tracy";
-      platform = "x11";
-      desktopName = "Tracy Profiler (nixGL)";
-      comment = "Real-time frame profiler (nixGL)";
-      categories = [
-        "Development"
-        "Debugger"
-        "Profiling"
-      ];
-      icon = "tracy";
-    };
   };
 
 in
 let
-  # Only build the apps listed in enabledApps (default: all)
-  selectedNames = if enabledApps == null then builtins.attrNames apps else enabledApps;
-  selectedApps = pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name selectedNames) apps;
+  enabledCatalogApps = pkgs.lib.filterAttrs (_: app: app.enable) apps;
+  requestedAppIds =
+    if enabledApps == null then builtins.attrNames enabledCatalogApps else enabledApps;
+  selectedAppDefs = pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name requestedAppIds) apps;
+  selectedApps = pkgs.lib.mapAttrs (catalogId: value: value.render catalogId) selectedAppDefs;
 in
 {
-  packages = pkgs.lib.mapAttrsToList (_: app: app.package) selectedApps;
+  enabledApps = builtins.attrNames selectedAppDefs;
+  packages = pkgs.lib.filter (pkg: pkg != null) (
+    pkgs.lib.mapAttrsToList (_: app: app.package) selectedApps
+  );
   shellAliases = pkgs.lib.foldl' (acc: app: acc // app.shellAliases) { } (
     pkgs.lib.attrValues selectedApps
   );
   binScripts = pkgs.lib.foldl' (acc: app: acc // app.binScripts) { } (
     pkgs.lib.attrValues selectedApps
   );
-  desktopEntries = pkgs.lib.mapAttrs (_: app: app.desktopEntry) selectedApps;
+  desktopEntries = pkgs.lib.listToAttrs (
+    pkgs.lib.mapAttrsToList (_: app: {
+      name = app.desktopId;
+      value = app.desktopEntry;
+    }) selectedApps
+  );
   mimeAssociations = pkgs.lib.foldl' (acc: app: acc // app.mimeAssoc) { } (
     pkgs.lib.attrValues selectedApps
   );

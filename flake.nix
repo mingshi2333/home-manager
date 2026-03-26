@@ -2,9 +2,8 @@
   description = "Personal home-manager configuration with modular structure";
 
   inputs = {
-    # Using nixos-unstable for latest packages
-    # Note: Unstable is preferred to avoid package breakage from version locks
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Temporary pin: nixos-unstable currently regresses electron_39, which breaks hmu/hms via podman-desktop.
+    nixpkgs.url = "github:nixos/nixpkgs/a499dfba7b52aac86504356512836550e9d49a5a";
 
     # Home Manager for declarative user environment management
     home-manager = {

@@ -324,6 +324,7 @@ let
     gearlever = standardApp {
       pkg = pkgs.gearlever;
       extraEnv = {
+        GDK_DISABLE = "vulkan";
         GSK_RENDERER = "gl";
       };
       desktopName = "Gear Lever (nixGL)";

@@ -8,6 +8,7 @@
     defaultApplications = config.local.nixgl.mimeAssociations // {
       "x-scheme-handler/http" = [ "chromium-browser.desktop" ];
       "x-scheme-handler/https" = [ "chromium-browser.desktop" ];
+      "x-scheme-handler/mailto" = [ "chromium-browser.desktop" ];
       "application/pdf" = [ "chromium-browser.desktop" ];
     };
   };

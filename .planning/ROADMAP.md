@@ -39,7 +39,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can confirm that wrapped apps launched from both desktop entries and shell commands see healthy KDE portal integration.
   2. User can confirm that required input-method environment is propagated into the actual runtime context of wrapped apps.
   3. User can run a repeatable validation path for clipboard behavior under the current session before and after app-specific fixes.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 02-01-PLAN.md - Build the reusable session validation probe suite in `tests/` for portal, IME, clipboard, and launch-path evidence.
+- [ ] 02-02-PLAN.md - Create the phase-local checklist, log template, and evidence runbook for repeatable Session Validation reruns.
 
 ### Phase 3: QQ And Electron Stabilization
 **Goal**: User can run `QQ` reliably on the current host and switch Electron-family apps between named repair profiles for stable clipboard behavior.

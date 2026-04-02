@@ -13,9 +13,9 @@
 
 ### Session Integration
 
-- [ ] **SESS-01**: User can verify that KDE portal integration is healthy for wrapped apps launched from desktop entries and shell commands.
-- [ ] **SESS-02**: User can propagate and validate input-method environment needed by wrapped apps in the Fedora KDE Wayland session.
-- [ ] **SESS-03**: User can run a repeatable validation path for clipboard behavior affecting wrapped apps under the current session.
+- [x] **SESS-01**: User can verify that KDE portal integration is healthy for wrapped apps launched from desktop entries and shell commands.
+- [x] **SESS-02**: User can propagate and validate input-method environment needed by wrapped apps in the Fedora KDE Wayland session.
+- [x] **SESS-03**: User can run a repeatable validation path for clipboard behavior affecting wrapped apps under the current session.
 
 ### QQ And Electron
 
@@ -64,9 +64,9 @@
 | POLI-01 | Phase 1 | Complete |
 | POLI-02 | Phase 1 | Complete |
 | POLI-03 | Phase 1 | Complete |
-| SESS-01 | Phase 2 | Pending |
-| SESS-02 | Phase 2 | Pending |
-| SESS-03 | Phase 2 | Pending |
+| SESS-01 | Phase 2 | Complete |
+| SESS-02 | Phase 2 | Complete |
+| SESS-03 | Phase 2 | Complete |
 | QQEL-01 | Phase 3 | Pending |
 | QQEL-02 | Phase 3 | Pending |
 | QQEL-03 | Phase 3 | Pending |

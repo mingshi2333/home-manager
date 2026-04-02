@@ -61,25 +61,25 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POLI-01 | Phase TBD | Pending |
-| POLI-02 | Phase TBD | Pending |
-| POLI-03 | Phase TBD | Pending |
-| SESS-01 | Phase TBD | Pending |
-| SESS-02 | Phase TBD | Pending |
-| SESS-03 | Phase TBD | Pending |
-| QQEL-01 | Phase TBD | Pending |
-| QQEL-02 | Phase TBD | Pending |
-| QQEL-03 | Phase TBD | Pending |
-| ZTQT-01 | Phase TBD | Pending |
-| ZTQT-02 | Phase TBD | Pending |
-| ZTQT-03 | Phase TBD | Pending |
-| OTHR-01 | Phase TBD | Pending |
-| OTHR-02 | Phase TBD | Pending |
+| POLI-01 | Phase 1 | Pending |
+| POLI-02 | Phase 1 | Pending |
+| POLI-03 | Phase 1 | Pending |
+| SESS-01 | Phase 2 | Pending |
+| SESS-02 | Phase 2 | Pending |
+| SESS-03 | Phase 2 | Pending |
+| QQEL-01 | Phase 3 | Pending |
+| QQEL-02 | Phase 3 | Pending |
+| QQEL-03 | Phase 3 | Pending |
+| ZTQT-01 | Phase 4 | Pending |
+| ZTQT-02 | Phase 4 | Pending |
+| ZTQT-03 | Phase 4 | Pending |
+| OTHR-01 | Phase 1 | Pending |
+| OTHR-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-02*

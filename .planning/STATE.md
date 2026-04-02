@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-session-validation-01-PLAN.md
-last_updated: "2026-04-02T17:42:22.310Z"
+status: verifying
+stopped_at: Completed 02-session-validation-02-PLAN.md
+last_updated: "2026-04-02T18:14:45.296Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 Phase: 02 (session-validation) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-02
 
 Progress: [██████████] 100%
@@ -67,6 +67,8 @@ Recent decisions affecting current work:
 - Phase 3-5: Prove the repair path first with `QQ`, then `Zotero`, then one additional affected app.
 - [Phase 02-session-validation]: Kept the Phase 2 validation suite observation-only and limited app iteration to qq and zotero across shell and desktop launches. — Phase 2 is a validation layer and must not perform runtime repairs before later QQ and Zotero stabilization plans.
 - [Phase 02-session-validation]: Recorded desktop-launch fallback evidence from generated desktop files when full xdg.desktopEntries evaluation hit an unrelated repository error. — The runner needed deterministic desktop launch evidence without repairing unrelated ayugram configuration drift during this plan.
+- [Phase 02-session-validation]: Keep Phase 2 evidence keyed by one Run ID across checklist, log template, and artifact directory. — This keeps baseline and post-repair validation runs directly comparable without remapping artifact references.
+- [Phase 02-session-validation]: Keep the runbook validation-only and route QQ paste confirmation into manual evidence instead of repair logic. — Phase 2 must diagnose session behavior without mutating app launch behavior before the later repair phases.
 
 ### Pending Todos
 
@@ -79,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T17:42:10.220Z
-Stopped at: Completed 02-session-validation-01-PLAN.md
+Last session: 2026-04-02T18:14:07.381Z
+Stopped at: Completed 02-session-validation-02-PLAN.md
 Resume file: None

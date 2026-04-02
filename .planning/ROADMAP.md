@@ -43,7 +43,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 02-01-PLAN.md - Build the reusable session validation probe suite in `tests/` for portal, IME, clipboard, and launch-path evidence.
-- [ ] 02-02-PLAN.md - Create the phase-local checklist, log template, and evidence runbook for repeatable Session Validation reruns.
+- [x] 02-02-PLAN.md - Create the phase-local checklist, log template, and evidence runbook for repeatable Session Validation reruns.
 
 ### Phase 3: QQ And Electron Stabilization
 **Goal**: User can run `QQ` reliably on the current host and switch Electron-family apps between named repair profiles for stable clipboard behavior.

@@ -19,9 +19,9 @@
 
 ### QQ And Electron
 
-- [ ] **QQEL-01**: User can launch `QQ` reliably through the managed wrapper path on the current Fedora KDE Wayland machine.
+- [x] **QQEL-01**: User can launch `QQ` reliably through the managed wrapper path on the current Fedora KDE Wayland machine.
 - [ ] **QQEL-02**: User can paste current clipboard content into `QQ` after prolonged runtime without receiving stale clipboard data.
-- [ ] **QQEL-03**: User can switch `QQ` and similar Electron apps between named launch profiles for repair and fallback testing.
+- [x] **QQEL-03**: User can switch `QQ` and similar Electron apps between named launch profiles for repair and fallback testing.
 
 ### Zotero And Qt
 
@@ -67,9 +67,9 @@
 | SESS-01 | Phase 2 | Complete |
 | SESS-02 | Phase 2 | Complete |
 | SESS-03 | Phase 2 | Complete |
-| QQEL-01 | Phase 3 | Pending |
+| QQEL-01 | Phase 3 | Complete |
 | QQEL-02 | Phase 3 | Pending |
-| QQEL-03 | Phase 3 | Pending |
+| QQEL-03 | Phase 3 | Complete |
 | ZTQT-01 | Phase 4 | Pending |
 | ZTQT-02 | Phase 4 | Pending |
 | ZTQT-03 | Phase 4 | Pending |

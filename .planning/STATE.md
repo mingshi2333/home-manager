@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-session-validation-02-PLAN.md
-last_updated: "2026-04-02T21:18:10.065Z"
+stopped_at: Completed 03-qq-and-electron-stabilization
+last_updated: "2026-04-02T22:48:25.333Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
-  percent: 100
+  completed_plans: 6
+  percent: 60
 ---
 
 # Project State
@@ -21,40 +21,44 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 **Core value:** Current `Fedora + KDE + Wayland` desktop apps must start reliably and stay usable without restart-driven recovery.
-**Current focus:** Phase 03 — qq-and-electron-stabilization
+**Current focus:** Phase 04 — zotero-and-qt-stabilization
 
 ## Current Position
 
-Phase: 03 (qq-and-electron-stabilization) — EXECUTING
-Plan: 2 of 2
+Phase: 04 (zotero-and-qt-stabilization)
+Plan: Not started
 Status: Ready to execute
 Last activity: 2026-04-02
 
-Progress: [██████████] 100%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2
-- Average duration: 6min
-- Total execution time: 0.2 hours
+- Total plans completed: 6
+- Average duration: 13min
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 2 | 12min | 6min |
+| 02 | 2 | 32min | 16min |
+| 03 | 2 | 35min | 17min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01, 01-02
+- Last 5 plans: 01-02, 02-01, 02-02, 03-01, 03-02
 - Trend: Stable
 
 | Phase 01 P01 | 7min | 2 tasks | 2 files |
 | Phase 01 P02 | 5min | 2 tasks | 1 files |
 | Phase 02-session-validation P01 | 30min | 2 tasks | 3 files |
+| Phase 02-session-validation P02 | 2min | 2 tasks | 3 files |
 | Phase 03 P01 | 15 min | 2 tasks | 4 files |
+| Phase 03 P02 | 20 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -71,6 +75,7 @@ Recent decisions affecting current work:
 - [Phase 02-session-validation]: Keep Phase 2 evidence keyed by one Run ID across checklist, log template, and artifact directory. — This keeps baseline and post-repair validation runs directly comparable without remapping artifact references.
 - [Phase 02-session-validation]: Keep the runbook validation-only and route QQ paste confirmation into manual evidence instead of repair logic. — Phase 2 must diagnose session behavior without mutating app launch behavior before the later repair phases.
 - [Phase 03]: Modeled QQ as default plus explicit opt-in profile surfaces generated from one catalog record instead of adding a QQ-only downstream branch.
+- [Phase 03]: Made `QQ` default to the safe `XWayland` profile while keeping `qq-wayland-test` and optional `qq-auto` as explicit comparison surfaces. — Stability is the default user path; Wayland and startup fallback remain opt-in diagnostics and recovery surfaces.
 
 ### Pending Todos
 
@@ -78,11 +83,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- `QQ` clipboard failure root cause is not yet proven and may involve backend mode plus session clipboard behavior.
 - `Zotero` startup instability still needs live diagnosis to separate Qt backend, GPU, and bundled-runtime causes.
 
 ## Session Continuity
 
-Last session: 2026-04-02T18:14:07.381Z
-Stopped at: Completed 02-session-validation-02-PLAN.md
+Last session: 2026-04-02T22:48:25.330Z
+Stopped at: Completed 03-qq-and-electron-stabilization
 Resume file: None

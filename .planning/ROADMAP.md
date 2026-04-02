@@ -13,8 +13,8 @@ This roadmap repairs the existing Home Manager plus `nixGL` compatibility stack 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Compatibility Boundary** - Create the Fedora KDE Wayland compatibility policy layer and baseline app inventory.
-- [ ] **Phase 2: Session Validation** - Verify portal, input-method, and clipboard behavior across managed launch paths.
-- [ ] **Phase 3: QQ And Electron Stabilization** - Repair `QQ` and establish reusable Electron fallback profiles.
+- [x] **Phase 2: Session Validation** - Verify portal, input-method, and clipboard behavior across managed launch paths.
+- [x] **Phase 3: QQ And Electron Stabilization** - Repair `QQ` and establish reusable Electron fallback profiles.
 - [ ] **Phase 4: Zotero And Qt Stabilization** - Stabilize `Zotero` startup and encode Qt fallback plus crash diagnosis paths.
 - [ ] **Phase 5: Reuse For Other Affected Apps** - Apply the same repair workflow to another broken app and confirm the path is reusable.
 
@@ -39,7 +39,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can confirm that wrapped apps launched from both desktop entries and shell commands see healthy KDE portal integration.
   2. User can confirm that required input-method environment is propagated into the actual runtime context of wrapped apps.
   3. User can run a repeatable validation path for clipboard behavior under the current session before and after app-specific fixes.
-**Plans**: 2 plans
+**Plans**: 2 total, 2 complete
 
 Plans:
 - [x] 02-01-PLAN.md - Build the reusable session validation probe suite in `tests/` for portal, IME, clipboard, and launch-path evidence.
@@ -53,7 +53,11 @@ Plans:
   1. User can launch `QQ` through the managed wrapper path and get repeatable startup on the current Fedora KDE Wayland machine.
   2. User can paste the current clipboard content into `QQ` after prolonged runtime without receiving stale clipboard data.
   3. User can switch `QQ` and similar Electron apps between named launch profiles for repair testing and safe fallback.
-**Plans**: TBD
+**Plans**: 2 total, 2 complete
+
+Plans:
+- [x] 03-01-SUMMARY.md - Move `QQ` to a safe XWayland default and introduce reusable Electron repair profile surfaces.
+- [x] 03-02-SUMMARY.md - Add the optional startup-only fallback helper and the Phase 3 validation runbook for `QQ` safe/test/fallback comparison.
 
 ### Phase 4: Zotero And Qt Stabilization
 **Goal**: User can launch `Zotero` stably and use a structured Qt fallback and diagnosis path when native startup is unreliable.
@@ -83,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Compatibility Boundary | 2/2 | Complete | 2026-04-02 |
-| 2. Session Validation | 0/TBD | Not started | - |
-| 3. QQ And Electron Stabilization | 0/TBD | Not started | - |
+| 2. Session Validation | 2/2 | Complete | 2026-04-02 |
+| 3. QQ And Electron Stabilization | 2/2 | Complete | 2026-04-03 |
 | 4. Zotero And Qt Stabilization | 0/TBD | Not started | - |
 | 5. Reuse For Other Affected Apps | 0/TBD | Not started | - |

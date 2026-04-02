@@ -248,12 +248,13 @@ sv_for_each_app_launch_path() {
   local appsCsv=$1
   local launchPathsCsv=$2
   local callback=$3
+  shift 3
   local app
   local launchPath
 
   while IFS= read -r app; do
     while IFS= read -r launchPath; do
-      "$callback" "$app" "$launchPath"
+      "$callback" "$@" "$app" "$launchPath"
     done < <(sv_normalize_launch_paths "$launchPathsCsv")
   done < <(sv_normalize_apps "$appsCsv")
 }

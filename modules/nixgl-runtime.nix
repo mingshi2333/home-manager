@@ -89,6 +89,10 @@ in
       type = types.attrsOf types.anything;
       readOnly = true;
     };
+    electronRepairProfiles = lib.mkOption {
+      type = types.attrsOf types.anything;
+      readOnly = true;
+    };
     shellAliases = lib.mkOption {
       type = types.attrsOf types.str;
       readOnly = true;
@@ -124,6 +128,7 @@ in
     appPackages = nixglApps.packages;
     compatibilityPolicies = nixglApps.compatibilityPolicies;
     appInventory = nixglApps.appInventory;
+    electronRepairProfiles = nixglApps.electronRepairProfiles;
     shellAliases = nixglApps.shellAliases;
     binScripts = nixglApps.binScripts;
     desktopEntries = nixglApps.desktopEntries;

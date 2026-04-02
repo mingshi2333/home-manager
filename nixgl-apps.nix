@@ -38,6 +38,7 @@ let
       extraFlags ? [ ],
       meta,
       source ? "app-catalog",
+      profileMeta ? { },
     }:
     {
       inherit
@@ -47,7 +48,8 @@ let
         source
         ;
       scope = meta.scope;
-    };
+    }
+    // profileMeta;
 
   mkInventoryRecord =
     {
@@ -56,6 +58,7 @@ let
       aliases ? [ ],
       meta,
       compatibilityPolicy,
+      profileMeta ? { },
     }:
     {
       inherit aliases desktopId enable;
@@ -66,7 +69,44 @@ let
       extraEnv = compatibilityPolicy.extraEnv;
       extraFlags = compatibilityPolicy.extraFlags;
       source = compatibilityPolicy.source;
+    }
+    // profileMeta;
+
+  mkProfileMeta =
+    {
+      appId,
+      profileId,
+      defaultProfile,
+      availableProfiles,
+      isDefault,
+    }:
+    {
+      profile = profileId;
+      profileAppId = appId;
+      profileDefault = defaultProfile;
+      profileAvailable = availableProfiles;
+      profileIsDefault = isDefault;
     };
+
+  electronRepairProfiles = {
+    xwayland-safe = {
+      platform = "x11";
+      extraEnv = {
+        ELECTRON_OZONE_PLATFORM_HINT = "x11";
+        NIXOS_OZONE_WL = "0";
+      };
+      extraFlags = [ "--ozone-platform=x11" ];
+    };
+
+    wayland-test = {
+      platform = "wayland";
+      extraEnv = {
+        ELECTRON_OZONE_PLATFORM_HINT = "wayland";
+        NIXOS_OZONE_WL = "1";
+      };
+      extraFlags = [ ];
+    };
+  };
 
   wrapWithNixGL =
     {
@@ -193,6 +233,7 @@ let
       execArgs ? "",
       dbusService ? null,
       compatibility ? { },
+      profileMeta ? { },
     }:
     let
       compatibilityMeta = normalizeCompatibilityMeta name compatibility;
@@ -216,6 +257,7 @@ let
       compatibilityPolicy = mkCompatibilityPolicy {
         inherit platform extraEnv extraFlags;
         meta = compatibilityMeta;
+        inherit profileMeta;
       };
     in
     {
@@ -261,6 +303,7 @@ let
         inherit enable aliases compatibilityPolicy;
         desktopId = name;
         meta = compatibilityMeta;
+        inherit profileMeta;
       };
       inherit compatibilityPolicy;
     };
@@ -274,17 +317,24 @@ let
     }@args:
     {
       inherit enable;
-      app =
-        (mkNixGLApp (
-          builtins.removeAttrs args [ "enable" ]
-          // {
-            inherit enable;
-            inherit name;
+      render =
+        _catalogId:
+        pkgs.lib.listToAttrs [
+          {
+            name = name;
+            value =
+              (mkNixGLApp (
+                builtins.removeAttrs args [ "enable" ]
+                // {
+                  inherit enable;
+                  inherit name;
+                }
+              ))
+              // {
+                desktopId = name;
+              };
           }
-        ))
-        // {
-          desktopId = name;
-        };
+        ];
     };
 
   mkStandardNixGLApp =
@@ -337,26 +387,33 @@ let
     in
     {
       inherit enable;
-      app = {
-        inherit
-          package
-          shellAliases
-          binScripts
-          desktopId
-          desktopEntry
-          mimeAssoc
-          compatibilityPolicy
-          ;
-        inventory = mkInventoryRecord {
-          inherit
-            enable
-            aliases
-            desktopId
-            compatibilityPolicy
-            ;
-          meta = compatibilityMeta;
-        };
-      };
+      render =
+        _catalogId:
+        pkgs.lib.listToAttrs [
+          {
+            name = desktopId;
+            value = {
+              inherit
+                package
+                shellAliases
+                binScripts
+                desktopId
+                desktopEntry
+                mimeAssoc
+                compatibilityPolicy
+                ;
+              inventory = mkInventoryRecord {
+                inherit
+                  enable
+                  aliases
+                  desktopId
+                  compatibilityPolicy
+                  ;
+                meta = compatibilityMeta;
+              };
+            };
+          }
+        ];
     };
 
   standardApp =
@@ -366,7 +423,8 @@ let
     }:
     {
       inherit enable;
-      render = catalogId: (mkStandardNixGLApp catalogId (builtins.removeAttrs args [ "enable" ])).app;
+      render =
+        catalogId: (mkStandardNixGLApp catalogId (builtins.removeAttrs args [ "enable" ])).render catalogId;
     };
 
   customApp =
@@ -376,7 +434,75 @@ let
     }:
     {
       inherit enable;
-      render = catalogId: (mkCustomApp catalogId (builtins.removeAttrs args [ "enable" ])).app;
+      render =
+        catalogId: (mkCustomApp catalogId (builtins.removeAttrs args [ "enable" ])).render catalogId;
+    };
+
+  electronProfiledApp =
+    args@{
+      enable ? true,
+      ...
+    }:
+    {
+      inherit enable;
+      render =
+        catalogId:
+        let
+          baseArgs = builtins.removeAttrs args [ "enable" ];
+          name = baseArgs.name or catalogId;
+          defaultProfile = baseArgs.defaultProfile;
+          exposedProfiles = baseArgs.exposedProfiles;
+          availableProfiles = pkgs.lib.unique ([ defaultProfile ] ++ exposedProfiles);
+          profileLabels = baseArgs.profileLabels or { };
+          profileBaseArgs = builtins.removeAttrs baseArgs [
+            "defaultProfile"
+            "exposedProfiles"
+            "profileLabels"
+          ];
+          renderProfile =
+            profileId:
+            let
+              profileDef =
+                electronRepairProfiles.${profileId}
+                  or (throw "Unknown Electron repair profile '${profileId}' for ${name}");
+              isDefault = profileId == defaultProfile;
+              profileName = if isDefault then name else "${name}-${profileId}";
+              profileLabel = profileLabels.${profileId} or profileId;
+            in
+            {
+              name = profileName;
+              value =
+                (mkNixGLApp (
+                  profileBaseArgs
+                  // {
+                    inherit enable;
+                    name = profileName;
+                    aliases = if isDefault then (profileBaseArgs.aliases or [ ]) else [ ];
+                    desktopName =
+                      if isDefault then
+                        profileBaseArgs.desktopName
+                      else
+                        "${profileBaseArgs.desktopName} (${profileLabel})";
+                    comment =
+                      if isDefault then profileBaseArgs.comment else "${profileBaseArgs.comment} (${profileLabel})";
+                    platform = profileDef.platform;
+                    extraEnv = profileDef.extraEnv // (profileBaseArgs.extraEnv or { });
+                    extraFlags = profileDef.extraFlags ++ (profileBaseArgs.extraFlags or [ ]);
+                    profileMeta = mkProfileMeta {
+                      appId = name;
+                      profileId = profileId;
+                      inherit defaultProfile;
+                      availableProfiles = availableProfiles;
+                      isDefault = isDefault;
+                    };
+                  }
+                ))
+                // {
+                  desktopId = profileName;
+                };
+            };
+        in
+        pkgs.lib.listToAttrs (map renderProfile availableProfiles);
     };
 
   lenovoLegionBinScripts = {
@@ -473,12 +599,19 @@ let
       icon = "cozy";
     };
 
-    qq = standardApp {
+    qq = electronProfiledApp {
       pkg = pkgs.qq;
-      platform = "wayland";
+      defaultProfile = "xwayland-safe";
+      exposedProfiles = [ "wayland-test" ];
+      profileLabels = {
+        xwayland-safe = "Safe";
+        wayland-test = "Wayland Test";
+      };
       compatibility = {
         health = "affected";
-        notes = [ "Clipboard and session stability regressions are tracked for later repair phases." ];
+        notes = [
+          "Default profile is pinned to XWayland while clipboard and long-session regressions are under repair."
+        ];
       };
       desktopName = "QQ (nixGL)";
       comment = "QQ Instant Messaging (nixGL)";
@@ -649,14 +782,21 @@ let
 in
 let
   enabledCatalogApps = pkgs.lib.filterAttrs (_: app: app.enable) apps;
-  renderedCatalogApps = pkgs.lib.mapAttrs (catalogId: value: value.render catalogId) apps;
+  exportedElectronRepairProfiles = electronRepairProfiles;
+  mergeRenderedApps = renderedApps: pkgs.lib.foldl' (acc: value: acc // value) { } renderedApps;
+  renderedCatalogApps = mergeRenderedApps (
+    pkgs.lib.mapAttrsToList (catalogId: value: value.render catalogId) apps
+  );
   requestedAppIds =
     if enabledApps == null then builtins.attrNames enabledCatalogApps else enabledApps;
   selectedAppDefs = pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name requestedAppIds) apps;
-  selectedApps = pkgs.lib.mapAttrs (catalogId: value: value.render catalogId) selectedAppDefs;
+  selectedApps = mergeRenderedApps (
+    pkgs.lib.mapAttrsToList (catalogId: value: value.render catalogId) selectedAppDefs
+  );
 in
 {
-  enabledApps = builtins.attrNames selectedAppDefs;
+  enabledApps = builtins.attrNames selectedApps;
+  electronRepairProfiles = exportedElectronRepairProfiles;
   compatibilityPolicies = pkgs.lib.mapAttrs (_: app: app.compatibilityPolicy) renderedCatalogApps;
   appInventory = pkgs.lib.mapAttrs (_: app: app.inventory) renderedCatalogApps;
   packages = pkgs.lib.filter (pkg: pkg != null) (

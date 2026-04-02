@@ -7,9 +7,9 @@
 
 ### Compatibility Policy
 
-- [ ] **POLI-01**: User can define whether a wrapped app launches with native Wayland or XWayland through declarative per-app configuration.
-- [ ] **POLI-02**: User can assign per-app environment variables and launch flags without editing upstream packages.
-- [ ] **POLI-03**: User can apply Fedora KDE Wayland specific compatibility overrides in one structured configuration layer.
+- [x] **POLI-01**: User can define whether a wrapped app launches with native Wayland or XWayland through declarative per-app configuration.
+- [x] **POLI-02**: User can assign per-app environment variables and launch flags without editing upstream packages.
+- [x] **POLI-03**: User can apply Fedora KDE Wayland specific compatibility overrides in one structured configuration layer.
 
 ### Session Integration
 
@@ -31,7 +31,7 @@
 
 ### Other Affected Apps
 
-- [ ] **OTHR-01**: User can maintain an inventory of other recurring app startup or runtime failures in this repository's wrapped desktop apps.
+- [x] **OTHR-01**: User can maintain an inventory of other recurring app startup or runtime failures in this repository's wrapped desktop apps.
 - [ ] **OTHR-02**: User can apply the same compatibility-policy and validation workflow to at least one non-QQ, non-Zotero affected app.
 
 ## v2 Requirements
@@ -61,9 +61,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POLI-01 | Phase 1 | Pending |
-| POLI-02 | Phase 1 | Pending |
-| POLI-03 | Phase 1 | Pending |
+| POLI-01 | Phase 1 | Complete |
+| POLI-02 | Phase 1 | Complete |
+| POLI-03 | Phase 1 | Complete |
 | SESS-01 | Phase 2 | Pending |
 | SESS-02 | Phase 2 | Pending |
 | SESS-03 | Phase 2 | Pending |
@@ -73,7 +73,7 @@
 | ZTQT-01 | Phase 4 | Pending |
 | ZTQT-02 | Phase 4 | Pending |
 | ZTQT-03 | Phase 4 | Pending |
-| OTHR-01 | Phase 1 | Pending |
+| OTHR-01 | Phase 1 | Complete |
 | OTHR-02 | Phase 5 | Pending |
 
 **Coverage:**

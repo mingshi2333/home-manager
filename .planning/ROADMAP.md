@@ -12,7 +12,7 @@ This roadmap repairs the existing Home Manager plus `nixGL` compatibility stack 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Compatibility Boundary** - Create the Fedora KDE Wayland compatibility policy layer and baseline app inventory.
+- [x] **Phase 1: Compatibility Boundary** - Create the Fedora KDE Wayland compatibility policy layer and baseline app inventory.
 - [ ] **Phase 2: Session Validation** - Verify portal, input-method, and clipboard behavior across managed launch paths.
 - [ ] **Phase 3: QQ And Electron Stabilization** - Repair `QQ` and establish reusable Electron fallback profiles.
 - [ ] **Phase 4: Zotero And Qt Stabilization** - Stabilize `Zotero` startup and encode Qt fallback plus crash diagnosis paths.
@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. User can attach per-app environment variables and launch flags through the repository's managed wrapper path.
   3. User can inspect one Fedora KDE Wayland specific configuration layer that contains host-scoped compatibility overrides.
   4. User can review a current inventory of wrapped desktop apps that still show recurring startup or runtime failures on this host.
-**Plans**: TBD
+**Plans**: 2 total, 2 complete
 
 ### Phase 2: Session Validation
 **Goal**: User can verify that the Fedora KDE Wayland session provides the portal, IME, and clipboard behavior required by wrapped apps regardless of launch entrypoint.
@@ -78,7 +78,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Compatibility Boundary | 0/TBD | Not started | - |
+| 1. Compatibility Boundary | 2/2 | Complete | 2026-04-02 |
 | 2. Session Validation | 0/TBD | Not started | - |
 | 3. QQ And Electron Stabilization | 0/TBD | Not started | - |
 | 4. Zotero And Qt Stabilization | 0/TBD | Not started | - |

@@ -14,7 +14,7 @@ launchTimeout=15
 
 usage() {
   cat <<'EOF'
-Usage: session-launch-capture.sh --app qq|zotero --launch-path shell|desktop --output-dir DIR [--probe-only] [--timeout SEC]
+Usage: session-launch-capture.sh --app qq|qq-wayland-test|qq-auto|zotero --launch-path shell|desktop --output-dir DIR [--probe-only] [--timeout SEC]
 EOF
 }
 
@@ -108,7 +108,7 @@ capture_live_process_state() {
     printf '%s\n' "$(resolve_desktop_exec "$appName")" >"$commandFile"
   fi
 
-  pattern="${appName}"
+  pattern=$(sv_runtime_process_pattern "$appName")
   pgrep -af "$pattern" >"$pgrepFile" || true
   pid=$(awk 'NR==1 {print $1}' "$pgrepFile")
 

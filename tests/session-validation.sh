@@ -14,7 +14,7 @@ logDir=$(sv_default_log_dir)
 
 usage() {
   cat <<'EOF'
-Usage: session-validation.sh [--check portal|ime|clipboard|all] [--apps qq,zotero] [--launch-paths shell,desktop] [--probe-only] [--log-dir DIR]
+Usage: session-validation.sh [--check portal|ime|clipboard|all] [--apps qq,qq-wayland-test,qq-auto,zotero] [--launch-paths shell,desktop] [--probe-only] [--log-dir DIR]
 EOF
 }
 
@@ -127,11 +127,23 @@ ime_live_checks() {
 clipboard_checks() {
   local outputDir=$1
   local qqPlaceholder="$outputDir/qq-paste-check.env"
+  local qqWaylandPlaceholder="$outputDir/qq-wayland-test-paste-check.env"
+  local qqAutoPlaceholder="$outputDir/qq-auto-startup-check.env"
 
   sv_clipboard_probe "$outputDir/wl-clipboard-probe.env"
   sv_write_status "$qqPlaceholder" pending \
     app qq \
     reason manual-paste-evidence-required \
+    probe_only "$probeOnly"
+
+  sv_write_status "$qqWaylandPlaceholder" pending \
+    app qq-wayland-test \
+    reason manual-paste-evidence-required \
+    probe_only "$probeOnly"
+
+  sv_write_status "$qqAutoPlaceholder" pending \
+    app qq-auto \
+    reason startup-only-evidence-required \
     probe_only "$probeOnly"
 }
 

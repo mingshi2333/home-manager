@@ -8,6 +8,65 @@
 }:
 
 let
+  compatibilityScope = "fedora-kde-wayland";
+  allowedHealthStates = [
+    "affected"
+    "suspected"
+    "healthy"
+    "unknown"
+  ];
+
+  normalizeCompatibilityMeta =
+    name: compatibility:
+    let
+      meta = compatibility;
+      health = meta.health or "unknown";
+    in
+    if !(builtins.elem health allowedHealthStates) then
+      throw "Invalid compatibility health '${health}' for ${name}"
+    else
+      {
+        health = health;
+        scope = meta.scope or compatibilityScope;
+        notes = meta.notes or [ ];
+      };
+
+  mkCompatibilityPolicy =
+    {
+      platform,
+      extraEnv ? { },
+      extraFlags ? [ ],
+      meta,
+      source ? "app-catalog",
+    }:
+    {
+      inherit
+        platform
+        extraEnv
+        extraFlags
+        source
+        ;
+      scope = meta.scope;
+    };
+
+  mkInventoryRecord =
+    {
+      enable,
+      desktopId,
+      aliases ? [ ],
+      meta,
+      compatibilityPolicy,
+    }:
+    {
+      inherit aliases desktopId enable;
+      health = meta.health;
+      scope = meta.scope;
+      notes = meta.notes;
+      platform = compatibilityPolicy.platform;
+      extraEnv = compatibilityPolicy.extraEnv;
+      extraFlags = compatibilityPolicy.extraFlags;
+      source = compatibilityPolicy.source;
+    };
 
   wrapWithNixGL =
     {
@@ -21,6 +80,7 @@ let
       mimeTypes ? [ ],
       execArgs ? "",
       dbusService ? null,
+      compatibility ? { },
     }:
     let
       bin = if binary != null then binary else (pkg.meta.mainProgram or name);
@@ -117,6 +177,7 @@ let
 
   mkNixGLApp =
     {
+      enable ? true,
       pkg,
       name,
       binary ? null,
@@ -131,8 +192,10 @@ let
       mimeTypes ? [ ],
       execArgs ? "",
       dbusService ? null,
+      compatibility ? { },
     }:
     let
+      compatibilityMeta = normalizeCompatibilityMeta name compatibility;
       wrapped = wrapWithNixGL {
         inherit
           pkg
@@ -145,10 +208,15 @@ let
           mimeTypes
           execArgs
           dbusService
+          compatibility
           ;
       };
       execPath = "${wrapped}/bin/${name}";
       allNames = [ name ] ++ aliases;
+      compatibilityPolicy = mkCompatibilityPolicy {
+        inherit platform extraEnv extraFlags;
+        meta = compatibilityMeta;
+      };
     in
     {
       package = wrapped;
@@ -189,6 +257,12 @@ let
           )
         else
           { };
+      inventory = mkInventoryRecord {
+        inherit enable aliases compatibilityPolicy;
+        desktopId = name;
+        meta = compatibilityMeta;
+      };
+      inherit compatibilityPolicy;
     };
 
   mkCatalogNixGLApp =
@@ -204,6 +278,7 @@ let
         (mkNixGLApp (
           builtins.removeAttrs args [ "enable" ]
           // {
+            inherit enable;
             inherit name;
           }
         ))
@@ -241,6 +316,10 @@ let
     catalogId:
     {
       enable ? true,
+      platform ? "system",
+      extraEnv ? { },
+      extraFlags ? [ ],
+      compatibility ? { },
       package ? null,
       shellAliases ? { },
       binScripts ? { },
@@ -248,6 +327,14 @@ let
       desktopEntry,
       mimeAssoc ? { },
     }:
+    let
+      compatibilityMeta = normalizeCompatibilityMeta desktopId compatibility;
+      compatibilityPolicy = mkCompatibilityPolicy {
+        inherit platform extraEnv extraFlags;
+        meta = compatibilityMeta;
+      };
+      aliases = builtins.attrNames shellAliases;
+    in
     {
       inherit enable;
       app = {
@@ -258,7 +345,17 @@ let
           desktopId
           desktopEntry
           mimeAssoc
+          compatibilityPolicy
           ;
+        inventory = mkInventoryRecord {
+          inherit
+            enable
+            aliases
+            desktopId
+            compatibilityPolicy
+            ;
+          meta = compatibilityMeta;
+        };
       };
     };
 
@@ -327,6 +424,10 @@ let
         GDK_DISABLE = "vulkan";
         GSK_RENDERER = "gl";
       };
+      compatibility = {
+        health = "suspected";
+        notes = [ "GTK renderer override remains host-specific until runtime validation." ];
+      };
       desktopName = "Gear Lever (nixGL)";
       comment = "Manage AppImages with Gear Lever (wrapped by nixGL)";
       categories = [
@@ -341,6 +442,10 @@ let
     podman-desktop = standardApp {
       pkg = pkgs.podman-desktop;
       platform = "wayland";
+      compatibility = {
+        health = "healthy";
+        notes = [ "Wayland launch path is the intended default on this host." ];
+      };
       desktopName = "Podman Desktop (nixGL)";
       comment = "Podman Desktop (nixGL)";
       categories = [
@@ -354,6 +459,10 @@ let
     cozy = standardApp {
       pkg = pkgs.cozy;
       platform = "x11";
+      compatibility = {
+        health = "unknown";
+        notes = [ "Pinned to XWayland until a native Wayland stance is proven." ];
+      };
       desktopName = "cozy (nixGL)";
       comment = "cozy (nixGL)";
       categories = [
@@ -367,6 +476,10 @@ let
     qq = standardApp {
       pkg = pkgs.qq;
       platform = "wayland";
+      compatibility = {
+        health = "affected";
+        notes = [ "Clipboard and session stability regressions are tracked for later repair phases." ];
+      };
       desktopName = "QQ (nixGL)";
       comment = "QQ Instant Messaging (nixGL)";
       categories = [
@@ -379,6 +492,10 @@ let
     wechat = standardApp {
       pkg = pkgs.wechat;
       platform = "wayland";
+      compatibility = {
+        health = "suspected";
+        notes = [ "Wayland path is explicit, but recurring host-specific issues are still under review." ];
+      };
       desktopName = "wechat (nixGL)";
       comment = "wechat Instant Messaging (nixGL)";
       categories = [
@@ -394,6 +511,10 @@ let
       extraEnv = {
         GTK_IM_MODULE_FILE = "${config.home.homeDirectory}/.nix-profile/etc/gtk-3.0/immodules.cache";
       };
+      compatibility = {
+        health = "affected";
+        notes = [ "Startup instability remains unresolved on Fedora KDE Wayland." ];
+      };
       desktopName = "Zotero (nixGL)";
       comment = "Zotero (nixGL)";
       categories = [
@@ -406,6 +527,10 @@ let
     tracy = standardApp {
       pkg = pkgs.tracy;
       platform = "x11";
+      compatibility = {
+        health = "healthy";
+        notes = [ "XWayland mode is currently the expected stable path." ];
+      };
       desktopName = "Tracy Profiler (nixGL)";
       comment = "Real-time frame profiler (nixGL)";
       categories = [
@@ -419,6 +544,10 @@ let
       pkg = pkgs.element-desktop;
       name = "element-desktop";
       platform = "wayland";
+      compatibility = {
+        health = "healthy";
+        notes = [ "Electron Wayland launch path is explicitly declared for this host." ];
+      };
       desktopName = "element-desktop (nixGL)";
       comment = "element-desktop (nixGL)";
       categories = [
@@ -436,6 +565,10 @@ let
         QT_QPA_PLATFORM = "wayland";
         QTWEBENGINE_DISABLE_SANDBOX = "1";
       };
+      compatibility = {
+        health = "suspected";
+        notes = [ "Custom Wayland env overrides are explicit pending host validation." ];
+      };
       aliases = [
         "Ayugram"
         "ayugram"
@@ -452,6 +585,12 @@ let
     };
 
     lenovo-legion = customApp {
+      compatibility = {
+        health = "unknown";
+        notes = [
+          "Privileged helper is cataloged for inventory visibility but is outside nixGL wrapper policy."
+        ];
+      };
       shellAliases = {
         legionpk = "lenovo-legion-pkexec";
       };
@@ -510,6 +649,7 @@ let
 in
 let
   enabledCatalogApps = pkgs.lib.filterAttrs (_: app: app.enable) apps;
+  renderedCatalogApps = pkgs.lib.mapAttrs (catalogId: value: value.render catalogId) apps;
   requestedAppIds =
     if enabledApps == null then builtins.attrNames enabledCatalogApps else enabledApps;
   selectedAppDefs = pkgs.lib.filterAttrs (name: _: pkgs.lib.elem name requestedAppIds) apps;
@@ -517,6 +657,8 @@ let
 in
 {
   enabledApps = builtins.attrNames selectedAppDefs;
+  compatibilityPolicies = pkgs.lib.mapAttrs (_: app: app.compatibilityPolicy) renderedCatalogApps;
+  appInventory = pkgs.lib.mapAttrs (_: app: app.inventory) renderedCatalogApps;
   packages = pkgs.lib.filter (pkg: pkg != null) (
     pkgs.lib.mapAttrsToList (_: app: app.package) selectedApps
   );

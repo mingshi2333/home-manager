@@ -81,6 +81,14 @@ in
       type = types.listOf types.package;
       readOnly = true;
     };
+    compatibilityPolicies = lib.mkOption {
+      type = types.attrsOf types.anything;
+      readOnly = true;
+    };
+    appInventory = lib.mkOption {
+      type = types.attrsOf types.anything;
+      readOnly = true;
+    };
     shellAliases = lib.mkOption {
       type = types.attrsOf types.str;
       readOnly = true;
@@ -114,6 +122,8 @@ in
     package = nixGLPackage;
     bin = nixGLBin;
     appPackages = nixglApps.packages;
+    compatibilityPolicies = nixglApps.compatibilityPolicies;
+    appInventory = nixglApps.appInventory;
     shellAliases = nixglApps.shellAliases;
     binScripts = nixglApps.binScripts;
     desktopEntries = nixglApps.desktopEntries;

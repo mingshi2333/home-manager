@@ -5,7 +5,7 @@ set -euo pipefail
 sessionValidationLibDir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 sessionValidationRepoRoot=$(cd -- "${sessionValidationLibDir}/.." && pwd)
 sessionValidationFlakeConfig='.#homeConfigurations.mingshi.config'
-sessionValidationAllowedApps=(qq zotero)
+sessionValidationAllowedApps=(qq qq-wayland-test qq-auto zotero)
 sessionValidationAllowedLaunchPaths=(shell desktop)
 
 sv_timestamp() {
@@ -193,7 +193,7 @@ sv_normalize_apps() {
 
   while IFS= read -r item; do
     case "$item" in
-      qq|zotero) normalized+=("$item") ;;
+      qq|qq-wayland-test|qq-auto|zotero) normalized+=("$item") ;;
       *) sv_fail "unsupported app '${item}'; allowed: ${sessionValidationAllowedApps[*]}" ;;
     esac
   done < <(sv_csv_to_lines "$csv")
@@ -203,6 +203,25 @@ sv_normalize_apps() {
   fi
 
   printf '%s\n' "${normalized[@]}"
+}
+
+sv_is_qq_surface() {
+  local app=$1
+
+  case "$app" in
+    qq|qq-wayland-test|qq-auto) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+sv_runtime_process_pattern() {
+  local app=$1
+
+  case "$app" in
+    qq|qq-wayland-test|qq-auto) printf 'qq\n' ;;
+    zotero) printf 'zotero\n' ;;
+    *) printf '%s\n' "$app" ;;
+  esac
 }
 
 sv_normalize_launch_paths() {

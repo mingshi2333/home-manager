@@ -22,28 +22,59 @@ stdenv.mkDerivation rec {
   dontUnpack = true;
 
   installPhase = ''
-    runHook preInstall
+        runHook preInstall
 
-    workdir=$(mktemp -d)
-    cd "$workdir"
-    ${libarchive}/bin/bsdtar -xf $src
+        workdir=$(mktemp -d)
+        cd "$workdir"
+        ${libarchive}/bin/bsdtar -xf $src
 
-    mkdir -p $out/bin
-    mkdir -p $out/share/karing
-    mkdir -p $out/share/applications
-    mkdir -p $out/share/pixmaps
+        mkdir -p $out/bin
+        mkdir -p $out/share/karing
+        mkdir -p $out/share/applications
+        mkdir -p $out/share/pixmaps
 
-    cp -r usr/share/karing/. $out/share/karing/
-    install -m 444 usr/share/applications/karing.desktop $out/share/applications/karing.desktop
-    install -m 444 usr/share/pixmaps/karing.png $out/share/pixmaps/karing.png
+        cp -r usr/share/karing/. $out/share/karing/
+        install -m 444 usr/share/applications/karing.desktop $out/share/applications/karing.desktop
+        install -m 444 usr/share/pixmaps/karing.png $out/share/pixmaps/karing.png
 
-    makeWrapper $out/share/karing/karing $out/bin/karing \
-      --prefix LD_LIBRARY_PATH : "$out/share/karing/lib:${keybinder3}/lib:/usr/lib64"
+        mv $out/share/karing/karingService $out/share/karing/karingService.bin
+        cat > $out/share/karing/karingService <<'EOF'
+    #!${stdenv.shell}
+    set -eu
 
-    substituteInPlace $out/share/applications/karing.desktop \
-      --replace-fail 'Exec=karing %U' 'Exec=karing %U'
+    pkexec_bin="@pkexec@"
+    external_helper="/usr/local/libexec/karing/karingService-root"
+    local_helper="$(dirname "$0")/karingService.bin"
 
-    runHook postInstall
+    if [ "$(id -u)" -eq 0 ]; then
+      if [ -x "$external_helper" ]; then
+        exec "$external_helper" "$@"
+      fi
+
+      exec "$local_helper" "$@"
+    fi
+
+    if [ -x "$pkexec_bin" ]; then
+      if [ -x "$external_helper" ]; then
+        exec "$pkexec_bin" "$external_helper" "$@"
+      fi
+
+      exec "$pkexec_bin" "$local_helper" "$@"
+    fi
+
+    exec "$local_helper" "$@"
+    EOF
+        chmod 0755 $out/share/karing/karingService
+        substituteInPlace $out/share/karing/karingService \
+          --replace-fail '@pkexec@' '/usr/bin/pkexec'
+
+        makeWrapper $out/share/karing/karing $out/bin/karing \
+          --prefix LD_LIBRARY_PATH : "$out/share/karing/lib:${keybinder3}/lib:/usr/lib64"
+
+        substituteInPlace $out/share/applications/karing.desktop \
+          --replace-fail 'Exec=karing %U' 'Exec=karing %U'
+
+        runHook postInstall
   '';
 
   meta = {

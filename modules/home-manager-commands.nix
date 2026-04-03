@@ -5,6 +5,52 @@ let
   hmRollbackCmd = "nix run .#home-manager -- switch --rollback --flake .";
   grepBin = "${pkgs.gnugrep}/bin/grep";
   awkBin = "${pkgs.gawk}/bin/awk";
+  syncKaringSystemHelperCmd = ''
+        karing_helper_src="$HOME/.nix-profile/share/karing/karingService.bin"
+        karing_helper_dst="/usr/local/libexec/karing/karingService-root"
+        polkit_rule_dst="/etc/polkit-1/rules.d/49-karing-tun.rules"
+        desired_user="$USER"
+
+        if [ -f "$karing_helper_src" ] && command -v pkexec >/dev/null 2>&1; then
+          src_hash="$(${pkgs.coreutils}/bin/sha256sum "$karing_helper_src" | ${awkBin} '{print $1}')"
+          dst_hash=""
+          if pkexec test -f "$karing_helper_dst" 2>/dev/null; then
+            dst_hash="$(pkexec ${pkgs.coreutils}/bin/sha256sum "$karing_helper_dst" 2>/dev/null | ${awkBin} '{print $1}' || true)"
+          fi
+
+          cat > /tmp/49-karing-tun.rules <<EOF
+    polkit.addRule(function(action, subject) {
+      if (action.id == "org.freedesktop.policykit.exec" &&
+          action.lookup("program") == "/usr/local/libexec/karing/karingService-root" &&
+          subject.user == "$desired_user" &&
+          subject.local) {
+        return polkit.Result.YES;
+      }
+    });
+    EOF
+
+          rules_hash="$(${pkgs.coreutils}/bin/sha256sum /tmp/49-karing-tun.rules | ${awkBin} '{print $1}')"
+          installed_rules_hash=""
+          if pkexec test -f "$polkit_rule_dst" 2>/dev/null; then
+            installed_rules_hash="$(pkexec ${pkgs.coreutils}/bin/sha256sum "$polkit_rule_dst" 2>/dev/null | ${awkBin} '{print $1}' || true)"
+          fi
+
+          if [ "$src_hash" != "$dst_hash" ] || [ "$rules_hash" != "$installed_rules_hash" ]; then
+            echo "[hms] syncing karing system helper and polkit rule"
+            pkexec ${pkgs.runtimeShell} -c '
+              set -eu
+              install -d -m 0755 /usr/local/libexec/karing
+              install -m 0755 "'$karing_helper_src'" "'$karing_helper_dst'"
+              chown root:root "'$karing_helper_dst'"
+              install -d -m 0755 /etc/polkit-1/rules.d
+              install -m 0644 /tmp/49-karing-tun.rules "'$polkit_rule_dst'"
+              chown root:root "'$polkit_rule_dst'"
+            '
+          fi
+
+          rm -f /tmp/49-karing-tun.rules
+        fi
+  '';
   refreshManagedAppSourcesCmd = ''
         if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
           qq_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxConfig.js | ${grepBin} -oP 'var params= \K\{.*\}(?=;)' || true)"
@@ -93,8 +139,8 @@ in
       let
         escapeAliasValue = v: builtins.replaceStrings [ "'" ] [ "'\\''" ] v;
         allAliases = config.local.nixgl.shellAliases // {
-          hms = "cd ~/.config/home-manager && { ${refreshManagedAppSourcesCmd}; ${updateNvidiaMetadataCmd}; ${hmSwitchCmd}; }";
-          hmu = "cd ~/.config/home-manager && { ${refreshManagedAppSourcesCmd}; ${updateNvidiaMetadataCmd}; nix flake update && ${hmSwitchCmd}; }";
+          hms = "cd ~/.config/home-manager && { ${refreshManagedAppSourcesCmd}; ${updateNvidiaMetadataCmd}; ${hmSwitchCmd}; ${syncKaringSystemHelperCmd}; }";
+          hmu = "cd ~/.config/home-manager && { ${refreshManagedAppSourcesCmd}; ${updateNvidiaMetadataCmd}; nix flake update && ${hmSwitchCmd}; ${syncKaringSystemHelperCmd}; }";
           hmr = "cd ~/.config/home-manager && ${hmRollbackCmd}";
         };
       in

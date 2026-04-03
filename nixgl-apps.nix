@@ -525,34 +525,6 @@ let
     };
   };
 
-  qqAutoFallbackBinScripts = {
-    ".local/bin/qq-auto" = {
-      text = ''
-        #!${pkgs.bash}/bin/bash
-        set -euo pipefail
-
-        primary="${config.home.homeDirectory}/.local/bin/qq-wayland-test"
-        fallback="${config.home.homeDirectory}/.local/bin/qq"
-        startup_window=''${QQ_AUTO_STARTUP_WINDOW:-8}
-
-        "$primary" "$@" &
-        primary_pid=$!
-
-        sleep "$startup_window"
-
-        # Limit fallback to startup-stage failure only. Once the initial process
-        # survives the startup window, the helper stops supervising and returns.
-        if ! kill -0 "$primary_pid" 2>/dev/null; then
-          wait "$primary_pid" || true
-          exec "$fallback" "$@"
-        fi
-
-        wait "$primary_pid"
-      '';
-      executable = true;
-    };
-  };
-
   apps = {
 
     # telegram = mkNixGLApp {
@@ -630,10 +602,9 @@ let
     qq = electronProfiledApp {
       pkg = pkgs.qq;
       defaultProfile = "xwayland-safe";
-      exposedProfiles = [ "wayland-test" ];
+      exposedProfiles = [ ];
       profileLabels = {
         xwayland-safe = "Safe";
-        wayland-test = "Wayland Test";
       };
       compatibility = {
         health = "affected";
@@ -648,34 +619,6 @@ let
         "InstantMessaging"
       ];
       icon = "qq";
-    };
-
-    qq-auto = customApp {
-      platform = "startup-fallback";
-      compatibility = {
-        health = "affected";
-        notes = [
-          "Optional startup-only helper tries the Wayland test surface first and falls back to the safe default only when launch fails during the startup window."
-          "No runtime clipboard or long-session health detection is performed by this helper."
-        ];
-      };
-      shellAliases = {
-        qq-auto = "${config.home.homeDirectory}/.local/bin/qq-auto";
-      };
-      binScripts = qqAutoFallbackBinScripts;
-      desktopId = "qq-auto";
-      desktopEntry = {
-        name = "QQ (Auto Fallback)";
-        exec = "${config.home.homeDirectory}/.local/bin/qq-auto";
-        terminal = false;
-        type = "Application";
-        comment = "QQ Wayland test with startup-only fallback to the safe default";
-        categories = [
-          "Network"
-          "InstantMessaging"
-        ];
-        icon = "qq";
-      };
     };
 
     wechat = standardApp {

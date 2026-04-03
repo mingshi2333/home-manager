@@ -1,5 +1,9 @@
 { config, pkgs, ... }:
 
+let
+  karing = pkgs.callPackage ../karing.nix { };
+in
+
 {
   home.packages =
     config.local.nixgl.appPackages
@@ -20,6 +24,7 @@
       pixi
       vivid
       spotify
+      karing
       config.local.nixgl.package
     ]);
 }

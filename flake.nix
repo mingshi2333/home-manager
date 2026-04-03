@@ -2,8 +2,8 @@
   description = "Personal home-manager configuration with modular structure";
 
   inputs = {
-    # Temporary pin: nixos-unstable currently regresses electron_39, which breaks hmu/hms via podman-desktop.
-    nixpkgs.url = "github:nixos/nixpkgs/a499dfba7b52aac86504356512836550e9d49a5a";
+    # nixpkgs follows nixos-unstable branch for up-to-date packages.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # Home Manager for declarative user environment management
     home-manager = {
@@ -41,11 +41,24 @@
             dwarfs = prev.dwarfs.override {
               boost = prev.boost187;
             };
+
+            qq = prev.qq.overrideAttrs (
+              _old:
+              let
+                source = (import ./qq-sources.nix { fetchurl = final.fetchurl; }).x86_64-linux;
+              in
+              {
+                version = source.version;
+                src = source.src;
+              }
+            );
           })
         ];
       };
     in
     {
+      packages.${system}.home-manager = home-manager.packages.${system}.home-manager;
+
       # Home Manager Configuration
       homeConfigurations."${username}" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;

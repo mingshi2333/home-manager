@@ -3,204 +3,22 @@
 let
   hmSwitchCmd = "nix run .#home-manager -- switch --flake .";
   hmRollbackCmd = "nix run .#home-manager -- switch --rollback --flake .";
-  grepBin = "${pkgs.gnugrep}/bin/grep";
-  awkBin = "${pkgs.gawk}/bin/awk";
-  syncKaringSystemHelperCmd = ''
-        karing_helper_src="$HOME/.nix-profile/share/karing/karingService.bin"
-        karing_helper_dst="/usr/local/libexec/karing/karingService-root"
-        polkit_rule_dst="/etc/polkit-1/rules.d/49-karing-tun.rules"
-        desired_user="$USER"
-
-        if [ -f "$karing_helper_src" ] && command -v pkexec >/dev/null 2>&1; then
-          src_hash="$(${pkgs.coreutils}/bin/sha256sum "$karing_helper_src" | ${awkBin} '{print $1}')"
-          dst_hash=""
-          if pkexec test -f "$karing_helper_dst" 2>/dev/null; then
-            dst_hash="$(pkexec ${pkgs.coreutils}/bin/sha256sum "$karing_helper_dst" 2>/dev/null | ${awkBin} '{print $1}' || true)"
-          fi
-
-          cat > /tmp/49-karing-tun.rules <<EOF
-    polkit.addRule(function(action, subject) {
-      if (action.id == "org.freedesktop.policykit.exec" &&
-          action.lookup("program") == "/usr/local/libexec/karing/karingService-root" &&
-          subject.user == "$desired_user" &&
-          subject.local) {
-        return polkit.Result.YES;
-      }
-    });
-    EOF
-
-          rules_hash="$(${pkgs.coreutils}/bin/sha256sum /tmp/49-karing-tun.rules | ${awkBin} '{print $1}')"
-          installed_rules_hash=""
-          if pkexec test -f "$polkit_rule_dst" 2>/dev/null; then
-            installed_rules_hash="$(pkexec ${pkgs.coreutils}/bin/sha256sum "$polkit_rule_dst" 2>/dev/null | ${awkBin} '{print $1}' || true)"
-          fi
-
-          if [ "$src_hash" != "$dst_hash" ] || [ "$rules_hash" != "$installed_rules_hash" ]; then
-            echo "[hms] syncing karing system helper and polkit rule"
-            pkexec ${pkgs.runtimeShell} -c '
-              set -eu
-              install -d -m 0755 /usr/local/libexec/karing
-              install -m 0755 "'$karing_helper_src'" "'$karing_helper_dst'"
-              chown root:root "'$karing_helper_dst'"
-              install -d -m 0755 /etc/polkit-1/rules.d
-              install -m 0644 /tmp/49-karing-tun.rules "'$polkit_rule_dst'"
-              chown root:root "'$polkit_rule_dst'"
-            '
-          fi
-
-          rm -f /tmp/49-karing-tun.rules
-        fi
-  '';
-  refreshManagedAppSourcesCmd = ''
-            if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-              existing_qq_version=""
-              existing_qq_url=""
-              existing_qq_hash=""
-              if [ -f qq-sources.nix ]; then
-                existing_qq_version="$(${grepBin} -oP 'version = "\K[^"]+' qq-sources.nix | head -n1 || true)"
-                existing_qq_url="$(${grepBin} -oP 'url = "\K[^"]+' qq-sources.nix | head -n1 || true)"
-                existing_qq_hash="$(${grepBin} -oP 'hash = "\K[^"]+' qq-sources.nix | head -n1 || true)"
-              fi
-
-              existing_karing_version=""
-              existing_karing_url=""
-              existing_karing_hash=""
-              if [ -f karing-sources.nix ]; then
-                existing_karing_version="$(${grepBin} -oP 'version = "\K[^"]+' karing-sources.nix | head -n1 || true)"
-                existing_karing_url="$(${grepBin} -oP 'url = "\K[^"]+' karing-sources.nix | head -n1 || true)"
-                existing_karing_hash="$(${grepBin} -oP 'hash = "\K[^"]+' karing-sources.nix | head -n1 || true)"
-              fi
-
-              qq_config_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxConfig.js | ${grepBin} -oP 'var params= \K\{.*\}(?=;)' || true)"
-              qq_log_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxLog.js || true)"
-              qq_log_version=""
-              qq_log_date=""
-              if [ -n "$qq_log_payload" ]; then
-                qq_log_version="$(printf '%s' "$qq_log_payload" | ${grepBin} -oP 'QQ Linux版 \K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
-                qq_log_date="$(printf '%s' "$qq_log_payload" | ${grepBin} -oP 'date":"\K[^"]+' | head -n1 || true)"
-              fi
-
-              if [ -n "$qq_config_payload" ]; then
-                qq_config_version="$(printf '%s' "$qq_config_payload" | jq -r '.version')"
-                qq_config_date="$(printf '%s' "$qq_config_payload" | jq -r '.updateDate')"
-                qq_config_url="$(printf '%s' "$qq_config_payload" | jq -r '.x64DownloadUrl.deb')"
-                qq_source_type="fetchurl"
-                qq_source_url="$qq_config_url"
-                qq_source_hash=""
-                qq_source_path=""
-                qq_effective_version="$qq_config_version-$qq_config_date"
-
-                if [ -n "$qq_log_version" ] && [ "$qq_log_version" != "$qq_config_version" ]; then
-              candidate_local="$(find "$HOME/Downloads" -maxdepth 1 -type f -name "*''${qq_log_version}*amd64*.deb" | sort | tail -n1 || true)"
-                  if [ -n "$candidate_local" ]; then
-                    qq_source_type="path"
-                    qq_source_path="$candidate_local"
-                    qq_effective_version="$qq_log_version-$qq_log_date"
-                    echo "[hms] qq using local package for newer update-channel version $qq_log_version"
-                  else
-                    echo "[hms] qq update channel advertises $qq_log_version but no stable downloadable package was found; keeping public package source $qq_config_version"
-                  fi
-                fi
-
-                if [ "$qq_source_type" = "fetchurl" ]; then
-                  if [ "$existing_qq_version" = "$qq_effective_version" ] && [ "$existing_qq_url" = "$qq_source_url" ] && [ -n "$existing_qq_hash" ]; then
-                    qq_source_hash="$existing_qq_hash"
-                  else
-                    qq_source_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$qq_source_url")")"
-                  fi
-                fi
-
-                cat > qq-sources.nix <<EOF
-    # Generated by hms source refresh. Do not edit manually.
-    # Last updated: $(date +%F)
-    { fetchurl }:
-    {
-      x86_64-linux = {
-        version = "$qq_effective_version";
-        updateChannelVersion = "$qq_log_version";
-        updateChannelDate = "$qq_log_date";
-        src = {
-          type = "$qq_source_type";
-    EOF
-                if [ "$qq_source_type" = "path" ]; then
-                  cat >> qq-sources.nix <<EOF
-          path = "$qq_source_path";
-    EOF
-                else
-                  cat >> qq-sources.nix <<EOF
-          url = "$qq_source_url";
-          hash = "$qq_source_hash";
-    EOF
-                fi
-                cat >> qq-sources.nix <<EOF
-        };
-      };
-    }
-    EOF
-                echo "[hms] qq sources refreshed to $qq_effective_version"
-              fi
-
-              karing_payload="$(curl -fsSL https://api.github.com/repos/KaringX/karing/releases/latest || true)"
-              if [ -n "$karing_payload" ]; then
-                karing_tag="$(printf '%s' "$karing_payload" | jq -r '.tag_name')"
-                karing_version="''${karing_tag#v}"
-                karing_url="$(printf '%s' "$karing_payload" | jq -r '.assets[].browser_download_url' | ${grepBin} 'linux_amd64\.rpm$' | head -n1)"
-                if [ -n "$karing_url" ]; then
-                  if [ "$existing_karing_version" = "$karing_version" ] && [ "$existing_karing_url" = "$karing_url" ] && [ -n "$existing_karing_hash" ]; then
-                    karing_hash="$existing_karing_hash"
-                  else
-                    karing_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$karing_url")")"
-                  fi
-                  cat > karing-sources.nix <<EOF
-        # Generated by hms source refresh. Do not edit manually.
-        # Last updated: $(date +%F)
-        { fetchurl }:
-        {
-          x86_64-linux = {
-            version = "$karing_version";
-            src = fetchurl {
-              url = "$karing_url";
-              hash = "$karing_hash";
-            };
-          };
-        }
-        EOF
-                  echo "[hms] karing sources refreshed to $karing_version"
-                fi
-              fi
-            fi
-  '';
-  updateNvidiaMetadataCmd = ''
-    if [ -r /proc/driver/nvidia/version ]; then
-      current_version="$(${awkBin} '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' /proc/driver/nvidia/version)"
-      stored_version=""
-      if [ -f nvidia/version ]; then
-        stored_version="$(${awkBin} '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' nvidia/version)"
-      fi
-
-      version_updated=0
-      if [ ! -f nvidia/version ] || ! cmp -s /proc/driver/nvidia/version nvidia/version; then
-        cat /proc/driver/nvidia/version > nvidia/version
-        version_updated=1
-        echo "[hms] nvidia/version updated"
-      fi
-
-      if [ "$version_updated" -eq 1 ] || [ ! -s nvidia/hash ] || ! ${grepBin} -Eq '^sha256-[A-Za-z0-9+/=]+$' nvidia/hash; then
-        if [ -z "$current_version" ]; then
-          echo "[hms] unable to parse NVIDIA version for hash update" >&2
-          exit 1
-        fi
-        nvidia_url="https://download.nvidia.com/XFree86/Linux-x86_64/$current_version/NVIDIA-Linux-x86_64-$current_version.run"
-        nvidia_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$nvidia_url")")"
-        printf '%s\n' "$nvidia_hash" > nvidia/hash
-        if [ "$current_version" != "$stored_version" ]; then
-          echo "[hms] nvidia/hash updated for $current_version"
-        else
-          echo "[hms] nvidia/hash refreshed"
-        fi
-      fi
-    fi
-  '';
+  refreshScript = pkgs.writeShellScript "hms-refresh" (
+    builtins.replaceStrings
+      [
+        "@grep_bin@"
+        "@awk_bin@"
+        "@sha256sum_bin@"
+        "@runtime_shell@"
+      ]
+      [
+        "${pkgs.gnugrep}/bin/grep"
+        "${pkgs.gawk}/bin/awk"
+        "${pkgs.coreutils}/bin/sha256sum"
+        "${pkgs.runtimeShell}"
+      ]
+      (builtins.readFile ../hms-refresh.sh)
+  );
 in
 {
   home.file = config.local.nixgl.binScripts // {
@@ -208,8 +26,8 @@ in
       let
         escapeAliasValue = v: builtins.replaceStrings [ "'" ] [ "'\\''" ] v;
         allAliases = config.local.nixgl.shellAliases // {
-          hms = "cd ~/.config/home-manager && { ${refreshManagedAppSourcesCmd}; ${updateNvidiaMetadataCmd}; ${hmSwitchCmd}; ${syncKaringSystemHelperCmd}; }";
-          hmu = "cd ~/.config/home-manager && { ${refreshManagedAppSourcesCmd}; ${updateNvidiaMetadataCmd}; nix flake update && ${hmSwitchCmd}; ${syncKaringSystemHelperCmd}; }";
+          hms = "cd ~/.config/home-manager && ${refreshScript}";
+          hmu = "cd ~/.config/home-manager && nix flake update && ${refreshScript}";
           hmr = "cd ~/.config/home-manager && ${hmRollbackCmd}";
         };
       in

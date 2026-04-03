@@ -46,23 +46,37 @@ stdenv.mkDerivation rec {
     external_helper="/usr/local/libexec/karing/karingService-root"
     local_helper="$(dirname "$0")/karingService.bin"
 
+    resolve_pkexec() {
+      if [ -x "$pkexec_bin" ]; then
+        printf '%s\n' "$pkexec_bin"
+        return 0
+      fi
+
+      if command -v pkexec >/dev/null 2>&1; then
+        command -v pkexec
+        return 0
+      fi
+
+      return 1
+    }
+
+    helper_to_exec="$local_helper"
+    if [ -x "$external_helper" ]; then
+      helper_to_exec="$external_helper"
+    fi
+
     if [ "$(id -u)" -eq 0 ]; then
-      if [ -x "$external_helper" ]; then
-        exec "$external_helper" "$@"
-      fi
-
-      exec "$local_helper" "$@"
+      exec "$helper_to_exec" "$@"
     fi
 
-    if [ -x "$pkexec_bin" ]; then
-      if [ -x "$external_helper" ]; then
-        exec env SHELL=/bin/sh "$pkexec_bin" "$external_helper" "$@"
-      fi
-
-      exec env SHELL=/bin/sh "$pkexec_bin" "$local_helper" "$@"
+    if resolved_pkexec="$(resolve_pkexec)"; then
+      exec env \
+        PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin \
+        SHELL=/bin/sh \
+        "$resolved_pkexec" "$helper_to_exec" "$@"
     fi
 
-    exec "$local_helper" "$@"
+    exec "$helper_to_exec" "$@"
     EOF
         chmod 0755 $out/share/karing/karingService
         substituteInPlace $out/share/karing/karingService \

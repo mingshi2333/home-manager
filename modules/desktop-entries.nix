@@ -1,5 +1,9 @@
 { config, pkgs, ... }:
 
+let
+  karing = pkgs.callPackage ../karing.nix { };
+in
+
 {
   xdg.enable = true;
 
@@ -14,6 +18,8 @@
   };
 
   xdg.desktopEntries = config.local.nixgl.desktopEntries;
+
+  xdg.configFile."autostart/karing.desktop".source = "${karing}/share/applications/karing.desktop";
 
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter [ "reloadSystemd" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications

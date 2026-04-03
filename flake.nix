@@ -49,7 +49,13 @@
               in
               {
                 version = source.version;
-                src = source.src;
+                src =
+                  if source.src.type == "path" then
+                    source.src.path
+                  else
+                    final.fetchurl {
+                      inherit (source.src) url hash;
+                    };
               }
             );
           })

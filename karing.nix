@@ -56,10 +56,10 @@ stdenv.mkDerivation rec {
 
     if [ -x "$pkexec_bin" ]; then
       if [ -x "$external_helper" ]; then
-        exec "$pkexec_bin" "$external_helper" "$@"
+        exec env SHELL=/bin/sh "$pkexec_bin" "$external_helper" "$@"
       fi
 
-      exec "$pkexec_bin" "$local_helper" "$@"
+      exec env SHELL=/bin/sh "$pkexec_bin" "$local_helper" "$@"
     fi
 
     exec "$local_helper" "$@"

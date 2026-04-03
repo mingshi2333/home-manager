@@ -3,10 +3,13 @@
 { fetchurl }:
 {
   x86_64-linux = {
-    version = "3.2.25-2026-02-05";
-    src = fetchurl {
-      url = "https://dldir1v6.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.25_260205_amd64_01.deb";
-      hash = "sha256-TVEHWd8lyfhcfj6E83XDaFq2L75wtNNI97osG6iCvuA=";
+    version = "3.2.22-2025-12-03";
+    updateChannelVersion = "3.2.27";
+    updateChannelDate = "2026-04-01 10:22:33";
+    src = {
+      type = "fetchurl";
+      url = "https://dldir1v6.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.22_251203_amd64_01.deb";
+      hash = "sha256-PwBL2yRrMZTSdsY26pbLQKfguBP+pHCVfRMx6AMyvVQ=";
     };
   };
 }

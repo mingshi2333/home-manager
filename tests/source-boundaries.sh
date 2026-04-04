@@ -16,8 +16,10 @@ fi
 
 rg -n 'sources/qq\.nix' flake.nix >/dev/null
 rg -n 'sources/karing\.nix' karing.nix >/dev/null
-rg -n 'sources/qq\.nix' hms-refresh.sh >/dev/null
-rg -n 'sources/karing\.nix' hms-refresh.sh >/dev/null
+rg -n 'sources/qq\.nix' ops/hms-refresh.sh >/dev/null
+rg -n 'sources/karing\.nix' ops/hms-refresh.sh >/dev/null
+
+test -f ops/hms-refresh.sh
 
 if rg -n 'sources/qq.nix|sources/karing.nix' modules >/dev/null; then
   echo "modules should not directly own source metadata references" >&2

@@ -17,7 +17,7 @@ let
         "${pkgs.coreutils}/bin/sha256sum"
         "${pkgs.runtimeShell}"
       ]
-      (builtins.readFile ../hms-refresh.sh)
+      (builtins.readFile ../ops/hms-refresh.sh)
   );
 in
 {

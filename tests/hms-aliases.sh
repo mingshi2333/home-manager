@@ -12,8 +12,13 @@ for alias_name in hms hmu; do
   fi
 done
 
-if ! printf '%s\n' "$alias_text" | grep -F "nix run .#home-manager -- switch --flake ." >/dev/null; then
-  echo "hms alias does not use the flake-locked home-manager CLI" >&2
+if ! printf '%s\n' "$alias_text" | grep -q "alias hms='cd ~/.config/home-manager && /nix/store/.*-hms-refresh'"; then
+  echo "expected hms alias to invoke generated hms-refresh script" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$alias_text" | grep -q "alias hmu='cd ~/.config/home-manager && nix flake update && /nix/store/.*-hms-refresh'"; then
+  echo "expected hmu alias to invoke generated hms-refresh script after nix flake update" >&2
   exit 1
 fi
 

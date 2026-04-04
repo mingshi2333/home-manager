@@ -45,7 +45,7 @@
             qq = prev.qq.overrideAttrs (
               _old:
               let
-                source = (import ./qq-sources.nix { fetchurl = final.fetchurl; }).x86_64-linux;
+                source = (import ./sources/qq.nix { fetchurl = final.fetchurl; }).x86_64-linux;
               in
               {
                 version = source.version;

@@ -7,75 +7,81 @@ sha256sum_bin="@sha256sum_bin@"
 runtime_shell="@runtime_shell@"
 
 refresh_managed_app_sources() {
-  if ! command -v curl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+  if ! command -v curl >/dev/null 2>&1; then
     return 0
+  fi
+
+  local has_jq=0
+  if command -v jq >/dev/null 2>&1; then
+    has_jq=1
   fi
 
   local existing_qq_version=""
   local existing_qq_url=""
   local existing_qq_hash=""
-  if [ -f qq-sources.nix ]; then
-    existing_qq_version="$($grep_bin -oP 'version = "\K[^"]+' qq-sources.nix | head -n1 || true)"
-    existing_qq_url="$($grep_bin -oP 'url = "\K[^"]+' qq-sources.nix | head -n1 || true)"
-    existing_qq_hash="$($grep_bin -oP 'hash = "\K[^"]+' qq-sources.nix | head -n1 || true)"
+  if [ -f sources/qq.nix ]; then
+    existing_qq_version="$($grep_bin -oP 'version = "\K[^"]+' sources/qq.nix | head -n1 || true)"
+    existing_qq_url="$($grep_bin -oP 'url = "\K[^"]+' sources/qq.nix | head -n1 || true)"
+    existing_qq_hash="$($grep_bin -oP 'hash = "\K[^"]+' sources/qq.nix | head -n1 || true)"
   fi
 
   local existing_karing_version=""
   local existing_karing_url=""
   local existing_karing_hash=""
-  if [ -f karing-sources.nix ]; then
-    existing_karing_version="$($grep_bin -oP 'version = "\K[^"]+' karing-sources.nix | head -n1 || true)"
-    existing_karing_url="$($grep_bin -oP 'url = "\K[^"]+' karing-sources.nix | head -n1 || true)"
-    existing_karing_hash="$($grep_bin -oP 'hash = "\K[^"]+' karing-sources.nix | head -n1 || true)"
+  if [ -f sources/karing.nix ]; then
+    existing_karing_version="$($grep_bin -oP 'version = "\K[^"]+' sources/karing.nix | head -n1 || true)"
+    existing_karing_url="$($grep_bin -oP 'url = "\K[^"]+' sources/karing.nix | head -n1 || true)"
+    existing_karing_hash="$($grep_bin -oP 'hash = "\K[^"]+' sources/karing.nix | head -n1 || true)"
   fi
 
-  local qq_config_payload=""
-  qq_config_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxConfig.js | "$grep_bin" -oP 'var params= \K\{.*\}(?=;)' || true)"
-  local qq_log_payload=""
-  qq_log_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxLog.js || true)"
-  local qq_log_version=""
-  local qq_log_date=""
-  if [ -n "$qq_log_payload" ]; then
-    qq_log_version="$(printf '%s' "$qq_log_payload" | "$grep_bin" -oP 'QQ Linux版 \K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
-    qq_log_date="$(printf '%s' "$qq_log_payload" | "$grep_bin" -oP 'date":"\K[^"]+' | head -n1 || true)"
-  fi
-
-  if [ -n "$qq_config_payload" ]; then
-    local qq_config_version=""
-    local qq_config_date=""
-    local qq_config_url=""
-    qq_config_version="$(printf '%s' "$qq_config_payload" | jq -r '.version')"
-    qq_config_date="$(printf '%s' "$qq_config_payload" | jq -r '.updateDate')"
-    qq_config_url="$(printf '%s' "$qq_config_payload" | jq -r '.x64DownloadUrl.deb')"
-
-    local qq_source_type="fetchurl"
-    local qq_source_url="$qq_config_url"
-    local qq_source_hash=""
-    local qq_source_path=""
-    local qq_effective_version="$qq_config_version-$qq_config_date"
-
-    if [ -n "$qq_log_version" ] && [ "$qq_log_version" != "$qq_config_version" ]; then
-      local candidate_local=""
-      candidate_local="$(find "$HOME/Downloads" -maxdepth 1 -type f -name "*${qq_log_version}*amd64*.deb" | sort | tail -n1 || true)"
-      if [ -n "$candidate_local" ]; then
-        qq_source_type="path"
-        qq_source_path="$candidate_local"
-        qq_effective_version="$qq_log_version-$qq_log_date"
-        echo "[hms] qq using local package for newer update-channel version $qq_log_version"
-      else
-        echo "[hms] qq update channel advertises $qq_log_version but no stable downloadable package was found; keeping public package source $qq_config_version"
-      fi
+  if [ "$has_jq" -eq 1 ]; then
+    local qq_config_payload=""
+    qq_config_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxConfig.js | "$grep_bin" -oP 'var params= \K\{.*\}(?=;)' || true)"
+    local qq_log_payload=""
+    qq_log_payload="$(curl -fsSL https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxLog.js || true)"
+    local qq_log_version=""
+    local qq_log_date=""
+    if [ -n "$qq_log_payload" ]; then
+      qq_log_version="$(printf '%s' "$qq_log_payload" | "$grep_bin" -oP 'QQ Linux版 \K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+      qq_log_date="$(printf '%s' "$qq_log_payload" | "$grep_bin" -oP 'date":"\K[^"]+' | head -n1 || true)"
     fi
 
-    if [ "$qq_source_type" = "fetchurl" ]; then
-      if [ "$existing_qq_version" = "$qq_effective_version" ] && [ "$existing_qq_url" = "$qq_source_url" ] && [ -n "$existing_qq_hash" ]; then
-        qq_source_hash="$existing_qq_hash"
-      else
-        qq_source_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$qq_source_url")")"
-      fi
-    fi
+    if [ -n "$qq_config_payload" ]; then
+      local qq_config_version=""
+      local qq_config_date=""
+      local qq_config_url=""
+      qq_config_version="$(printf '%s' "$qq_config_payload" | jq -r '.version')"
+      qq_config_date="$(printf '%s' "$qq_config_payload" | jq -r '.updateDate')"
+      qq_config_url="$(printf '%s' "$qq_config_payload" | jq -r '.x64DownloadUrl.deb')"
 
-    cat > qq-sources.nix <<EOF
+      local qq_source_type="fetchurl"
+      local qq_source_url="$qq_config_url"
+      local qq_source_hash=""
+      local qq_source_path=""
+      local qq_effective_version="$qq_config_version-$qq_config_date"
+
+      if [ -n "$qq_log_version" ] && [ "$qq_log_version" != "$qq_config_version" ]; then
+        local candidate_local=""
+        candidate_local="$(find "$HOME/Downloads" -maxdepth 1 -type f -name "*${qq_log_version}*amd64*.deb" | sort | tail -n1 || true)"
+        if [ -n "$candidate_local" ]; then
+          qq_source_type="path"
+          qq_source_path="$candidate_local"
+          qq_effective_version="$qq_log_version-$qq_log_date"
+          echo "[hms] qq using local package for newer update-channel version $qq_log_version"
+        else
+          echo "[hms] qq update channel advertises $qq_log_version but no stable downloadable package was found; keeping public package source $qq_config_version"
+        fi
+      fi
+
+      if [ "$qq_source_type" = "fetchurl" ]; then
+        if [ "$existing_qq_version" = "$qq_effective_version" ] && [ "$existing_qq_url" = "$qq_source_url" ] && [ -n "$existing_qq_hash" ]; then
+          qq_source_hash="$existing_qq_hash"
+        else
+          qq_source_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$qq_source_url")")"
+        fi
+      fi
+
+      cat > sources/qq.nix <<EOF
 # Generated by hms source refresh. Do not edit manually.
 # Last updated: $(date +%F)
 { fetchurl }:
@@ -87,40 +93,40 @@ refresh_managed_app_sources() {
     src = {
       type = "$qq_source_type";
 EOF
-    if [ "$qq_source_type" = "path" ]; then
-      cat >> qq-sources.nix <<EOF
+      if [ "$qq_source_type" = "path" ]; then
+        cat >> sources/qq.nix <<EOF
       path = "$qq_source_path";
 EOF
-    else
-      cat >> qq-sources.nix <<EOF
+      else
+        cat >> sources/qq.nix <<EOF
       url = "$qq_source_url";
       hash = "$qq_source_hash";
 EOF
-    fi
-    cat >> qq-sources.nix <<EOF
+      fi
+      cat >> sources/qq.nix <<EOF
     };
   };
 }
 EOF
-    echo "[hms] qq sources refreshed to $qq_effective_version"
-  fi
+      echo "[hms] qq sources refreshed to $qq_effective_version"
+    fi
 
-  local karing_payload=""
-  karing_payload="$(curl -fsSL https://api.github.com/repos/KaringX/karing/releases/latest || true)"
-  if [ -n "$karing_payload" ]; then
-    local karing_tag=""
-    karing_tag="$(printf '%s' "$karing_payload" | jq -r '.tag_name')"
-    local karing_version="${karing_tag#v}"
-    local karing_url=""
-    karing_url="$(printf '%s' "$karing_payload" | jq -r '.assets[].browser_download_url' | "$grep_bin" 'linux_amd64\.rpm$' | head -n1)"
-    if [ -n "$karing_url" ]; then
-      local karing_hash=""
-      if [ "$existing_karing_version" = "$karing_version" ] && [ "$existing_karing_url" = "$karing_url" ] && [ -n "$existing_karing_hash" ]; then
-        karing_hash="$existing_karing_hash"
-      else
-        karing_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$karing_url")")"
-      fi
-      cat > karing-sources.nix <<EOF
+    local karing_payload=""
+    karing_payload="$(curl -fsSL https://api.github.com/repos/KaringX/karing/releases/latest || true)"
+    if [ -n "$karing_payload" ]; then
+      local karing_tag=""
+      karing_tag="$(printf '%s' "$karing_payload" | jq -r '.tag_name')"
+      local karing_version="${karing_tag#v}"
+      local karing_url=""
+      karing_url="$(printf '%s' "$karing_payload" | jq -r '.assets[].browser_download_url' | "$grep_bin" 'linux_amd64\.rpm$' | head -n1)"
+      if [ -n "$karing_url" ]; then
+        local karing_hash=""
+        if [ "$existing_karing_version" = "$karing_version" ] && [ "$existing_karing_url" = "$karing_url" ] && [ -n "$existing_karing_hash" ]; then
+          karing_hash="$existing_karing_hash"
+        else
+          karing_hash="$(nix hash to-sri --type sha256 "$(nix-prefetch-url "$karing_url")")"
+        fi
+        cat > sources/karing.nix <<EOF
 # Generated by hms source refresh. Do not edit manually.
 # Last updated: $(date +%F)
 { fetchurl }:
@@ -134,7 +140,8 @@ EOF
   };
 }
 EOF
-      echo "[hms] karing sources refreshed to $karing_version"
+        echo "[hms] karing sources refreshed to $karing_version"
+      fi
     fi
   fi
 }
@@ -206,7 +213,7 @@ EOF
       if ! env SHELL=/bin/sh pkexec "$runtime_shell" -c '
         set -eu
         install -d -m 0755 /usr/local/libexec/karing
-        install -m 0755 "'$karing_helper_src'" "'$karing_helper_dst'"
+        install -m 4755 "'$karing_helper_src'" "'$karing_helper_dst'"
         chown root:root "'$karing_helper_dst'"
         install -d -m 0755 /etc/polkit-1/rules.d
         install -m 0644 /tmp/49-karing-tun.rules "'$polkit_rule_dst'"

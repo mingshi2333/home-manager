@@ -8,7 +8,7 @@
 }:
 
 let
-  source = (import ./karing-sources.nix { inherit fetchurl; }).x86_64-linux;
+  source = (import ./sources/karing.nix { inherit fetchurl; }).x86_64-linux;
 in
 stdenv.mkDerivation rec {
   pname = "karing";
@@ -29,6 +29,7 @@ stdenv.mkDerivation rec {
         ${libarchive}/bin/bsdtar -xf $src
 
         mkdir -p $out/bin
+        mkdir -p $out/libexec/karing
         mkdir -p $out/share/karing
         mkdir -p $out/share/applications
         mkdir -p $out/share/pixmaps
@@ -69,6 +70,10 @@ stdenv.mkDerivation rec {
       exec "$helper_to_exec" "$@"
     fi
 
+    if [ -x "$external_helper" ]; then
+      exec "$external_helper" "$@"
+    fi
+
     if resolved_pkexec="$(resolve_pkexec)"; then
       exec env \
         PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin \
@@ -82,7 +87,33 @@ stdenv.mkDerivation rec {
         substituteInPlace $out/share/karing/karingService \
           --replace-fail '@pkexec@' '/usr/bin/pkexec'
 
+        cat > $out/libexec/karing/sudo <<'EOF'
+    #!${stdenv.shell}
+    set -eu
+
+    if [ "$#" -ge 3 ] && [ "$1" = "chown" ] && [ "$2" = "root:root" ]; then
+      case "$3" in
+        */share/karing/karingService)
+          exit 0
+          ;;
+      esac
+    fi
+
+    if [ "$#" -ge 3 ] && [ "$1" = "chmod" ] && [ "$2" = "+sx" ]; then
+      case "$3" in
+        */share/karing/karingService)
+          exit 0
+          ;;
+      esac
+    fi
+
+    exec /usr/bin/sudo "$@"
+    EOF
+        chmod 0755 $out/libexec/karing/sudo
+
         makeWrapper $out/share/karing/karing $out/bin/karing \
+          --set SHELL /bin/sh \
+          --prefix PATH : "$out/libexec/karing" \
           --prefix LD_LIBRARY_PATH : "$out/share/karing/lib:${keybinder3}/lib:/usr/lib64"
 
         substituteInPlace $out/share/applications/karing.desktop \

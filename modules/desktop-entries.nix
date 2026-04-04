@@ -7,6 +7,8 @@ in
 {
   xdg.enable = true;
 
+  home.file.".config/autostart/karing.desktop".source = "${karing}/share/applications/karing.desktop";
+
   xdg.mimeApps = {
     enable = true;
     defaultApplications = config.local.nixgl.mimeAssociations // {
@@ -18,8 +20,6 @@ in
   };
 
   xdg.desktopEntries = config.local.nixgl.desktopEntries;
-
-  xdg.configFile."autostart/karing.desktop".source = "${karing}/share/applications/karing.desktop";
 
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter [ "reloadSystemd" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications

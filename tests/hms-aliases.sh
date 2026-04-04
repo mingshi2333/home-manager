@@ -5,8 +5,8 @@ set -euo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 alias_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".zsh_aliases\".text --raw)
 
-# Keep the command-surface check intentionally narrow: these aliases should only
-# expose the repo entrypoints, not inline operational shell bodies or pinned nix binaries.
+# Keep the command-surface check intentionally narrow: these aliases should
+# point at the generated repo script or rollback command without hardcoded nix binaries.
 
 hms_alias=$(printf '%s\n' "$alias_text" | grep '^alias hms=' || true)
 hmu_alias=$(printf '%s\n' "$alias_text" | grep '^alias hmu=' || true)

@@ -41,23 +41,6 @@
             dwarfs = prev.dwarfs.override {
               boost = prev.boost187;
             };
-
-            qq = prev.qq.overrideAttrs (
-              _old:
-              let
-                qqSource = (import ./sources/qq.nix { fetchurl = final.fetchurl; }).x86_64-linux;
-              in
-              {
-                version = qqSource.version;
-                src =
-                  if qqSource.src.type == "path" then
-                    qqSource.src.path
-                  else
-                    final.fetchurl {
-                      inherit (qqSource.src) url hash;
-                    };
-              }
-            );
           })
         ];
       };

@@ -1,15 +1,7 @@
 { config, pkgs, ... }:
 
-let
-  karing = pkgs.callPackage ../karing.nix { };
-in
-
 {
   xdg.enable = true;
-
-  # Keep Karing desktop/autostart exposure in the desktop module rather than in
-  # the package derivation or host-local refresh script.
-  home.file.".config/autostart/karing.desktop".source = "${karing}/share/applications/karing.desktop";
 
   xdg.mimeApps = {
     enable = true;

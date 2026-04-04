@@ -8,11 +8,11 @@
 }:
 
 let
-  source = (import ./sources/karing.nix { inherit fetchurl; }).x86_64-linux;
+  karingSource = (import ./sources/karing.nix { inherit fetchurl; }).x86_64-linux;
 in
 stdenv.mkDerivation rec {
   pname = "karing";
-  inherit (source) version src;
+  inherit (karingSource) version src;
 
   nativeBuildInputs = [
     libarchive

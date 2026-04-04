@@ -45,16 +45,16 @@
             qq = prev.qq.overrideAttrs (
               _old:
               let
-                source = (import ./sources/qq.nix { fetchurl = final.fetchurl; }).x86_64-linux;
+                qqSource = (import ./sources/qq.nix { fetchurl = final.fetchurl; }).x86_64-linux;
               in
               {
-                version = source.version;
+                version = qqSource.version;
                 src =
-                  if source.src.type == "path" then
-                    source.src.path
+                  if qqSource.src.type == "path" then
+                    qqSource.src.path
                   else
                     final.fetchurl {
-                      inherit (source.src) url hash;
+                      inherit (qqSource.src) url hash;
                     };
               }
             );

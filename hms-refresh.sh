@@ -6,6 +6,9 @@ awk_bin="@awk_bin@"
 sha256sum_bin="@sha256sum_bin@"
 runtime_shell="@runtime_shell@"
 
+# sources/*.nix are generated metadata only. Package construction stays in flake.nix
+# and karing.nix; this script is the only place that mutates those files.
+
 refresh_managed_app_sources() {
   if ! command -v curl >/dev/null 2>&1; then
     return 0

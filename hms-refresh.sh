@@ -184,6 +184,9 @@ update_nvidia_metadata() {
 }
 
 sync_karing_system_helper() {
+  # Keep host-local privileged helper and polkit rule sync outside of Home
+  # Manager modules and outside of the Karing package build. This script owns
+  # the machine-local copy/install step into /usr/local and /etc.
   local karing_helper_src="$HOME/.nix-profile/share/karing/karingService.bin"
   local karing_helper_dst="/usr/local/libexec/karing/karingService-root"
   local polkit_rule_dst="/etc/polkit-1/rules.d/49-karing-tun.rules"

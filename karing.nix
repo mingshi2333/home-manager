@@ -38,6 +38,9 @@ stdenv.mkDerivation rec {
         install -m 444 usr/share/applications/karing.desktop $out/share/applications/karing.desktop
         install -m 444 usr/share/pixmaps/karing.png $out/share/pixmaps/karing.png
 
+        # Keep the Karing-specific privilege/runtime workaround in the package:
+        # the packaged launcher prefers the host-installed privileged helper when
+        # present, but still retains an app-local fallback for direct execution.
         mv $out/share/karing/karingService $out/share/karing/karingService.bin
         cat > $out/share/karing/karingService <<'EOF'
     #!${stdenv.shell}

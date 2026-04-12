@@ -4,6 +4,7 @@
   fetchurl,
   libarchive,
   makeWrapper,
+  keybinder3,
 }:
 
 let
@@ -37,7 +38,7 @@ stdenv.mkDerivation rec {
     install -m 444 usr/share/pixmaps/karing.png $out/share/pixmaps/karing.png
 
     makeWrapper $out/share/karing/karing $out/bin/karing \
-      --prefix LD_LIBRARY_PATH : "$out/share/karing/lib:/usr/lib64"
+      --prefix LD_LIBRARY_PATH : "$out/share/karing/lib:${keybinder3}/lib:/usr/lib64"
 
     substituteInPlace $out/share/applications/karing.desktop \
       --replace-fail 'Exec=karing %U' 'Exec=karing %U'

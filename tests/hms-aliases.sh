@@ -73,6 +73,16 @@ assert_script_contains \
 
 assert_script_contains \
   "$hmu_script_text" \
+  '^export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle\.pem$' \
+  'expected hmu wrapper script to export the Fedora CA bundle for nix HTTPS fetches'
+
+assert_script_contains \
+  "$hmu_script_text" \
+  '^export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle\.pem$' \
+  'expected hmu wrapper script to export matching SSL_CERT_FILE for curl-compatible consumers'
+
+assert_script_contains \
+  "$hmu_script_text" \
   '^nix flake update$' \
   'expected hmu wrapper script to update the flake before refresh'
 

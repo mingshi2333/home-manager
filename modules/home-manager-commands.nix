@@ -18,6 +18,8 @@ let
         #!${pkgs.runtimeShell}
         set -euo pipefail
         cd ~/.config/home-manager
+        export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+        export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
         nix flake update
         exec ${refreshScript}
       '';

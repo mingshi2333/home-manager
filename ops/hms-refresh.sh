@@ -36,7 +36,9 @@ refresh_managed_app_sources() {
       karing_tag="$(printf '%s' "$karing_payload" | jq -r '.tag_name')"
       local karing_version="${karing_tag#v}"
       local karing_url=""
+      set +e
       karing_url="$(printf '%s' "$karing_payload" | jq -r '.assets[].browser_download_url' | "$grep_bin" 'linux_amd64\.rpm$' | head -n1)"
+      set -e
       if [ -n "$karing_url" ]; then
         local karing_hash=""
         if [ "$existing_karing_version" = "$karing_version" ] && [ "$existing_karing_url" = "$karing_url" ] && [ -n "$existing_karing_hash" ]; then
@@ -97,6 +99,9 @@ update_nvidia_metadata() {
     fi
   fi
 }
+
+export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
 
 refresh_managed_app_sources
 update_nvidia_metadata

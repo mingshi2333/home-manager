@@ -600,6 +600,7 @@ let
     };
 
     qq = electronProfiledApp {
+      enable = false;
       pkg = pkgs.qq;
       defaultProfile = "xwayland-safe";
       exposedProfiles = [ ];

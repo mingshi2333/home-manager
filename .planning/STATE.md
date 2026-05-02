@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 Phase: 04 (zotero-and-qt-stabilization)
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-04-02
+Last activity: 2026-05-02 - Completed quick task 260502-oyh: fix nixgl-noimpure nvidiaDrivers override kernel arg removed in new nixpkgs
 
 Progress: [██████░░░░] 60%
 
@@ -84,6 +84,12 @@ None yet.
 ### Blockers/Concerns
 
 - `Zotero` startup instability still needs live diagnosis to separate Qt backend, GPU, and bundled-runtime causes.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260502-oyh | fix nixgl-noimpure nvidiaDrivers override kernel arg removed in new nixpkgs | 2026-05-02 | 9a6e283 | [260502-oyh-fix-nixgl-noimpure-nvidiadrivers-overrid](./quick/260502-oyh-fix-nixgl-noimpure-nvidiadrivers-overrid/) |
 
 ## Session Continuity
 

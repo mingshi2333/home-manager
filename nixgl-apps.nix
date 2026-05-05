@@ -696,12 +696,19 @@ let
       extraEnv = {
         ELECTRON_OZONE_PLATFORM_HINT = "x11";
         NIXOS_OZONE_WL = "0";
+        VK_DRIVER_FILES = "/run/nonexistent/tradingview-disable-vulkan-driver.json";
+        VK_ICD_FILENAMES = "/run/nonexistent/tradingview-disable-vulkan-icd.json";
       };
-      extraFlags = [ "--ozone-platform=x11" ];
+      extraFlags = [
+        "--ozone-platform=x11"
+        "--disable-vulkan"
+        "--disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan"
+        "--use-gl=desktop"
+      ];
       compatibility = {
         health = "suspected";
         notes = [
-          "Pinned to XWayland after Electron GPU child processes crashed during Wayland/Vulkan startup."
+          "Pinned to XWayland and disables Chromium Vulkan probing after GPU child processes crashed in the NVIDIA Vulkan ICD."
         ];
       };
       desktopName = "TradingView (nixGL)";
@@ -720,10 +727,15 @@ let
       extraEnv = {
         QT_QPA_PLATFORM = "xcb";
         QTWEBENGINE_DISABLE_SANDBOX = "1";
+        WEBKIT_DISABLE_DMABUF_RENDERER = "1";
+        WEBKIT_SKIA_ENABLE_CPU_RENDERING = "1";
+        WEBKIT_SKIA_GPU_PAINTING_THREADS = "0";
       };
       compatibility = {
         health = "suspected";
-        notes = [ "Pinned to XWayland as the Telegram-compatible tg:// handler on this host." ];
+        notes = [
+          "Pinned to XWayland as the Telegram-compatible tg:// handler; WebKit webviews use CPU rendering to avoid surfaceless EGL aborts."
+        ];
       };
       aliases = [
         "AyuGram"

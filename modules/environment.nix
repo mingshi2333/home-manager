@@ -5,6 +5,7 @@
     EDITOR = "vim";
     NIXOS_XDG_OPEN_USE_PORTAL = "1";
     GTK_USE_PORTAL = "1";
+    WEBKIT_DISABLE_DMABUF_RENDERER = "1";
     XDG_DATA_DIRS = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share";
   };
 
@@ -21,5 +22,9 @@
   xdg.configFile."environment.d/30-xdg-portal.conf".text = ''
     NIXOS_XDG_OPEN_USE_PORTAL=1
     GTK_USE_PORTAL=1
+  '';
+
+  xdg.configFile."environment.d/40-webkit-graphics.conf".text = ''
+    WEBKIT_DISABLE_DMABUF_RENDERER=1
   '';
 }

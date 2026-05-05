@@ -46,6 +46,7 @@ let
       ;
   };
   dedupApps = (builtins.attrNames nixglApps.desktopEntries) ++ [
+    "ayugram-desktop"
     "telegram-desktop"
     "org.telegram.desktop"
     "telegram"

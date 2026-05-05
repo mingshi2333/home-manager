@@ -692,10 +692,17 @@ let
 
     tradingview = standardApp {
       pkg = pkgs.tradingview;
-      platform = "wayland";
+      platform = "x11";
+      extraEnv = {
+        ELECTRON_OZONE_PLATFORM_HINT = "x11";
+        NIXOS_OZONE_WL = "0";
+      };
+      extraFlags = [ "--ozone-platform=x11" ];
       compatibility = {
-        health = "unknown";
-        notes = [ "New nixGL wrapper entry pending runtime validation on this host." ];
+        health = "suspected";
+        notes = [
+          "Pinned to XWayland after Electron GPU child processes crashed during Wayland/Vulkan startup."
+        ];
       };
       desktopName = "TradingView (nixGL)";
       comment = "TradingView Desktop (nixGL)";
@@ -708,19 +715,21 @@ let
 
     ayugram = standardApp {
       pkg = pkgs.ayugram-desktop;
-      name = "ayugram-desktop";
+      name = "com.ayugram.desktop";
       binary = "AyuGram";
       extraEnv = {
-        QT_QPA_PLATFORM = "wayland";
+        QT_QPA_PLATFORM = "xcb";
         QTWEBENGINE_DISABLE_SANDBOX = "1";
       };
       compatibility = {
         health = "suspected";
-        notes = [ "Custom Wayland env overrides are explicit pending host validation." ];
+        notes = [ "Pinned to XWayland as the Telegram-compatible tg:// handler on this host." ];
       };
       aliases = [
+        "AyuGram"
         "Ayugram"
         "ayugram"
+        "ayugram-desktop"
       ];
       desktopName = "Ayugram Desktop";
       comment = "Ayugram Desktop (nixGL)";
@@ -728,9 +737,10 @@ let
         "Network"
         "InstantMessaging"
       ];
-      icon = "ayugram";
+      icon = "com.ayugram.desktop";
       mimeTypes = [ "x-scheme-handler/tg" ];
-      dbusService = "org.ayugram.desktop.service";
+      execArgs = "-- %u";
+      dbusService = "com.ayugram.desktop.service";
     };
 
     lenovo-legion = customApp {

@@ -728,13 +728,11 @@ let
         QT_QPA_PLATFORM = "xcb";
         QTWEBENGINE_DISABLE_SANDBOX = "1";
         WEBKIT_DISABLE_DMABUF_RENDERER = "1";
-        WEBKIT_SKIA_ENABLE_CPU_RENDERING = "1";
-        WEBKIT_SKIA_GPU_PAINTING_THREADS = "0";
       };
       compatibility = {
         health = "suspected";
         notes = [
-          "Pinned to XWayland as the Telegram-compatible tg:// handler; WebKit webviews use CPU rendering to avoid surfaceless EGL aborts."
+          "Pinned to XWayland as the Telegram-compatible tg:// handler; WebKit webviews keep GPU painting but avoid DMABUF to reduce surfaceless EGL aborts."
         ];
       };
       aliases = [

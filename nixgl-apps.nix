@@ -690,6 +690,22 @@ let
       icon = "element-desktop";
     };
 
+    tradingview = standardApp {
+      pkg = pkgs.tradingview;
+      platform = "wayland";
+      compatibility = {
+        health = "unknown";
+        notes = [ "New nixGL wrapper entry pending runtime validation on this host." ];
+      };
+      desktopName = "TradingView (nixGL)";
+      comment = "TradingView Desktop (nixGL)";
+      categories = [
+        "Office"
+        "Finance"
+      ];
+      icon = "tradingview";
+    };
+
     ayugram = standardApp {
       pkg = pkgs.ayugram-desktop;
       name = "ayugram-desktop";

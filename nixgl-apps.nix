@@ -718,6 +718,8 @@ let
         "Finance"
       ];
       icon = "tradingview";
+      mimeTypes = [ "x-scheme-handler/tradingview" ];
+      execArgs = "%U";
     };
 
     ayugram = standardApp {

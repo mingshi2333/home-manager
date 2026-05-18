@@ -89,6 +89,7 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 260518 | hms dirty warning cleanup and generated symlink hygiene | 2026-05-18 | uncommitted | [260518-hms-dirty-warning-cleanup](./quick/260518-hms-dirty-warning-cleanup/) |
 | 260502-oyh | fix nixgl-noimpure nvidiaDrivers override kernel arg removed in new nixpkgs | 2026-05-02 | 9a6e283 | [260502-oyh-fix-nixgl-noimpure-nvidiadrivers-overrid](./quick/260502-oyh-fix-nixgl-noimpure-nvidiadrivers-overrid/) |
 
 ## Session Continuity

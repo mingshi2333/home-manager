@@ -16,10 +16,16 @@
       url = "github:nix-community/nixGL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    codex-desktop-linux = {
+      url = "github:ilysenko/codex-desktop-linux";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "nixgl/flake-utils";
+    };
   };
 
   outputs =
-    {
+    inputs@{
       self,
       nixpkgs,
       home-manager,
@@ -55,6 +61,7 @@
         # Extra arguments passed to all modules
         extraSpecialArgs = {
           inherit username;
+          codexDesktopLinux = inputs.codex-desktop-linux;
         };
 
         modules = [

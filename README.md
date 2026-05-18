@@ -128,9 +128,10 @@ lenovo-legion = customApp {
 ## 便捷命令
 
 ```bash
-hms   # 刷新 NVIDIA 元数据后执行 home-manager switch --impure
+hms   # 检查并更新 Codex Desktop、刷新 NVIDIA 元数据后执行 home-manager switch --impure
 hmu   # 刷新 NVIDIA 元数据、更新 flake 后执行 switch --impure
 hmr   # 回滚到上一个版本（--impure --rollback）
+hmgc  # 清理旧 profile/Home Manager generations、运行 Nix GC 并优化 Nix store 重复文件
 ```
 
 ## 故障排除

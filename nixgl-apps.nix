@@ -3,11 +3,14 @@
   pkgs,
   nixGLBin,
   fcitxEnv,
+  codexDesktopLinux,
   enabledApps ? null,
   ...
 }:
 
 let
+  system = pkgs.stdenv.hostPlatform.system;
+  codexDesktopPkg = codexDesktopLinux.packages.${system}.default;
   compatibilityScope = "fedora-kde-wayland";
   allowedHealthStates = [
     "affected"
@@ -720,6 +723,38 @@ let
       icon = "tradingview";
       mimeTypes = [ "x-scheme-handler/tradingview" ];
       execArgs = "%U";
+    };
+
+    codex-desktop = standardApp {
+      pkg = codexDesktopPkg;
+      name = "codex-desktop";
+      binary = "codex-desktop";
+      platform = "x11";
+      extraEnv = {
+        CODEX_CLI_PATH = "${pkgs.codex}/bin/codex";
+        ELECTRON_OZONE_PLATFORM_HINT = "x11";
+        NIXOS_OZONE_WL = "0";
+      };
+      extraFlags = [
+        "--ozone-platform=x11"
+      ];
+      compatibility = {
+        health = "unknown";
+        notes = [
+          "Wrapped with nixGL on Fedora KDE Wayland; upstream launcher supports XWayland-first startup and codex:// callbacks."
+        ];
+      };
+      desktopName = "Codex Desktop (nixGL)";
+      comment = "Codex Desktop for Linux (nixGL)";
+      categories = [
+        "Development"
+      ];
+      icon = "codex-desktop";
+      mimeTypes = [
+        "x-scheme-handler/codex"
+        "x-scheme-handler/codex-browser-sidebar"
+      ];
+      execArgs = "%u";
     };
 
     ayugram = standardApp {

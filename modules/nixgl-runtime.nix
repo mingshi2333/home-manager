@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  codexDesktopLinux,
   ...
 }:
 
@@ -43,6 +44,7 @@ let
       pkgs
       nixGLBin
       fcitxEnv
+      codexDesktopLinux
       ;
   };
   dedupApps = (builtins.attrNames nixglApps.desktopEntries) ++ [

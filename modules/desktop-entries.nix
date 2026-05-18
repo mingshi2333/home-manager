@@ -1,4 +1,16 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+let
+  managedDesktopFiles = map (name: "${name}.desktop") (
+    builtins.attrNames config.local.nixgl.desktopEntries
+  );
+  managedDesktopFilesText = lib.concatStringsSep " " managedDesktopFiles;
+in
 
 {
   xdg.enable = true;
@@ -49,10 +61,24 @@
       done
     fi
 
+    managed_desktop_files="${managedDesktopFilesText}"
+
     if [ -d "$HOME/.nix-profile/share/applications" ]; then
       for desktop in $HOME/.nix-profile/share/applications/*.desktop; do
         [ -f "$desktop" ] || continue
         name=$(basename "$desktop")
+        case " $managed_desktop_files " in
+          *" $name "*)
+            local_link="$HOME/.local/share/applications/$name"
+            if [ -L "$local_link" ]; then
+              target=$(readlink -f "$local_link")
+              case "$target" in
+                $HOME/.nix-profile/share/applications/*) $DRY_RUN_CMD rm -f "$local_link" ;;
+              esac
+            fi
+            continue
+            ;;
+        esac
         $DRY_RUN_CMD ln -sf "$desktop" "$HOME/.local/share/applications/$name"
       done
     fi

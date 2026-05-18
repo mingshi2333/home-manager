@@ -72,6 +72,36 @@ assert_script_contains \
   'expected hms wrapper script to invoke generated hms-refresh script'
 
 assert_script_contains \
+  "$hms_script_text" \
+  '^export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle\.pem$' \
+  'expected hms wrapper script to export the Fedora CA bundle for nix HTTPS fetches'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle\.pem$' \
+  'expected hms wrapper script to export matching SSL_CERT_FILE for curl-compatible consumers'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^locked_rev="\$\(nix flake metadata --json \. \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r '\''\.locks\.nodes\."codex-desktop-linux"\.locked\.rev // empty'\''\)"$' \
+  'expected hms wrapper script to read the locked Codex Desktop revision before updating'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^[[:space:]]*if ! remote_rev="\$\(nix flake metadata --json github:ilysenko/codex-desktop-linux \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r '\''\.revision // \.locked\.rev // empty'\''\)"; then$' \
+  'expected hms wrapper script to check the remote Codex Desktop revision before updating'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^[[:space:]]*if \[ "\$locked_rev" != "\$remote_rev" \]; then$' \
+  'expected hms wrapper script to update Codex Desktop only when the remote revision differs'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^[[:space:]]*nix flake update codex-desktop-linux$' \
+  'expected hms wrapper script to update only the Codex Desktop input when needed'
+
+assert_script_contains \
   "$hmu_script_text" \
   '^export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle\.pem$' \
   'expected hmu wrapper script to export the Fedora CA bundle for nix HTTPS fetches'
@@ -102,6 +132,11 @@ hmgc_script_path=$(cd "$repo_root" && nix run .#home-manager -- build --flake . 
 
 if ! grep -Fq 'home-manager expire-generations "-3 days"' "$hmgc_script_path"; then
   echo 'expected hmgc cleanup script to keep only 3 days of Home Manager generations' >&2
+  exit 1
+fi
+
+if ! grep -Fq 'nix-store --optimise' "$hmgc_script_path"; then
+  echo 'expected hmgc cleanup script to optimise live Nix store paths after GC' >&2
   exit 1
 fi
 

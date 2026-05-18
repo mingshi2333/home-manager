@@ -76,10 +76,18 @@ update_nvidia_metadata() {
     fi
 
     local version_updated=0
-    if [ ! -f nvidia/version ] || ! cmp -s /proc/driver/nvidia/version nvidia/version; then
-      cat /proc/driver/nvidia/version > nvidia/version
+    local normalized_version=""
+    normalized_version="$(mktemp)"
+    "$awk_bin" '{ sub(/[[:space:]]+$/, ""); print }' /proc/driver/nvidia/version > "$normalized_version"
+
+    if [ ! -f nvidia/version ] || ! cmp -s "$normalized_version" nvidia/version; then
+      mv "$normalized_version" nvidia/version
+      normalized_version=""
       version_updated=1
       echo "[hms] nvidia/version updated"
+    fi
+    if [ -n "$normalized_version" ]; then
+      rm -f "$normalized_version"
     fi
 
     if [ "$version_updated" -eq 1 ] || [ ! -s nvidia/hash ] || ! "$grep_bin" -Eq '^sha256-[A-Za-z0-9+/=]+$' nvidia/hash; then

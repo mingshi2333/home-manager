@@ -51,9 +51,12 @@ hms
 等同于:
 ```bash
 cd ~/.config/home-manager
+# check remote codex-desktop-linux revision, then update only if it changed
 # refresh nvidia/version and nvidia/hash if needed
 home-manager switch --impure
 ```
+
+这会先比较本地 lock 和远端 Codex Desktop revision;只有远端变更时才更新 `codex-desktop-linux`,不会滚动 nixpkgs/home-manager 等系统级输入。
 
 ### `hmu` - Home Manager Update
 更新 flake 输入并切换到新配置:
@@ -83,6 +86,13 @@ hmr
 cd ~/.config/home-manager && home-manager switch --impure --rollback
 ```
 
+### `hmgc` - Home Manager GC
+清理旧 generation 和 Nix store:
+```bash
+hmgc
+```
+这会删除旧用户 profile generations、保留最近 3 天的 Home Manager generations、运行 `nix-collect-garbage`,然后用 `nix-store --optimise` 对仍存活的 Nix store 路径做内容去重。
+
 ## 推荐工作流程
 
 ### 日常使用
@@ -92,6 +102,9 @@ hms
 
 # 定期更新所有软件(例如每周一次)
 hmu
+
+# 定期清理旧 Nix generations 和重复 store 内容
+hmgc
 ```
 
 ### 如果更新后有问题
@@ -102,10 +115,12 @@ hmr
 
 ## 注意事项
 
-1. **自动更新**: `hmu` 会更新所有包到最新版本,可能导致破坏性变更
-2. **版本锁定**: 如果你想锁定特定版本,不要运行 `hmu`,只运行 `hms`
-3. **NVIDIA 元数据**: `hms` 和 `hmu` 会在切换前尝试刷新 `nvidia/version` 与 `nvidia/hash`
-4. **回滚**: `hmr` 只能回滚一代,如果需要回滚多代,使用:
+1. **Codex Desktop 自动更新**: `hms` 会先检查远端 `codex-desktop-linux` revision,只有变化时才更新,然后应用配置
+2. **全量自动更新**: `hmu` 会更新所有包到最新版本,可能导致破坏性变更
+3. **版本锁定**: 如果你想锁定全部版本,不要运行 `hms` 或 `hmu`,直接使用 `nix run .#home-manager -- switch --flake .`
+4. **NVIDIA 元数据**: `hms` 和 `hmu` 会在切换前尝试刷新 `nvidia/version` 与 `nvidia/hash`
+5. **Nix 清理**: `hmgc` 会删除旧 generation 和未引用的 store path; `nix-store --optimise` 只对仍存活路径做硬链接去重,不会删除当前仍被引用的软件
+6. **回滚**: `hmr` 只能回滚一代,如果需要回滚多代,使用:
    ```bash
    home-manager generations  # 查看所有代数
    home-manager switch --to-generation <number>

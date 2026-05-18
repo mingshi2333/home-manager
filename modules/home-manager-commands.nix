@@ -9,6 +9,25 @@ let
         #!${pkgs.runtimeShell}
         set -euo pipefail
         cd ~/.config/home-manager
+        export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+        export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+        locked_rev="$(nix flake metadata --json . | ${pkgs.jq}/bin/jq -r '.locks.nodes."codex-desktop-linux".locked.rev // empty')"
+        if ! remote_rev="$(nix flake metadata --json github:ilysenko/codex-desktop-linux | ${pkgs.jq}/bin/jq -r '.revision // .locked.rev // empty')"; then
+          echo "[hms] unable to query remote codex-desktop-linux revision" >&2
+          exit 1
+        fi
+
+        if [ -z "$remote_rev" ]; then
+          echo "[hms] unable to resolve remote codex-desktop-linux revision" >&2
+          exit 1
+        fi
+
+        if [ "$locked_rev" != "$remote_rev" ]; then
+          echo "[hms] updating codex-desktop-linux: ''${locked_rev:-missing} -> $remote_rev"
+          nix flake update codex-desktop-linux
+        else
+          echo "[hms] codex-desktop-linux already latest: $locked_rev"
+        fi
         exec ${refreshScript}
       '';
       executable = true;
@@ -59,6 +78,7 @@ let
     fi
 
     ${pkgs.nix}/bin/nix-collect-garbage
+    ${pkgs.nix}/bin/nix-store --optimise
   '';
   refreshScript = pkgs.writeShellScript "hms-refresh" (
     builtins.replaceStrings

@@ -1,7 +1,10 @@
-# AI-generated workflow artifacts
+# Local workflow artifacts
 .planning/
 docs/superpowers/
 .claude/
+AGENTS.md
+CLAUDE.md
+.vscode/
 outputs/
 cache.db
 

@@ -1,131 +1,90 @@
-# Home Manager 使用指南
+# Home Manager Usage
 
-## 自动功能
+## Daily Workflow
 
-### 自动刷新 Desktop 文件
-每次运行 `home-manager switch` 时会自动:
-1. 复制 `~/.nix-profile/share/applications/*.desktop` 到 `~/.local/share/applications/`
-2. 运行 `update-desktop-database` 刷新数据库
-3. 运行 `kbuildsycoca6` 刷新 KDE 菜单缓存
+Apply local changes:
 
-这意味着你不需要手动复制 desktop 文件或刷新 KDE 菜单了!
+```bash
+hms
+```
 
-## 添加 nixGL 应用
+Update flake inputs and apply the result:
 
-### 统一 catalog 路径: 在 `nixgl-apps.nix` 添加一条 entry
+```bash
+hmu
+```
 
-现在所有应用都统一注册在 `nixgl-apps.nix`，常规场景不需要再重复写 catalog id。
+Roll back one generation:
 
-- 常规 nixGL GUI 应用优先使用 `standardApp`
-- 命名不标准但仍属 nixGL 包装的应用，仍可用 `standardApp` 并显式覆盖 `name` / `binary`
-- 需要 `pkexec`、自定义脚本或手写 desktop entry 的应用，使用 `customApp`
+```bash
+hmr
+```
+
+Clean old generations and optimise the Nix store:
+
+```bash
+hmgc
+```
+
+## What The Aliases Do
+
+`hms` changes into `~/.config/home-manager`, refreshes managed local metadata when
+needed, and runs:
+
+```bash
+nix run .#home-manager -- switch --flake .
+```
+
+`hmu` runs `nix flake update` before the same switch path.
+
+`hmr` uses the flake-locked Home Manager package to roll back the previous generation.
+
+`hmgc` removes old user profile generations, expires Home Manager generations older
+than three days, runs `nix-collect-garbage`, and finishes with `nix-store --optimise`.
+
+## Adding Applications
+
+Add regular nixGL GUI apps to `nixgl-apps.nix`:
 
 ```nix
 myapp = standardApp {
   pkg = pkgs.myapp;
+  platform = "wayland";
   categories = [ "Utility" ];
 };
 ```
 
-- `enable ? true`，默认会被纳入 `local.nixgl.enabledApps`
-- `local.nixgl.enabledApps` 现在表示当前 catalog 中启用的应用 id
-- 生成的 desktop entry、shell alias、`~/.local/bin` wrapper 和 MIME 关联仍由运行时统一导出
+Use `customApp` only when the app needs a custom launcher, special desktop entry, or
+non-standard command wiring.
 
-### 自定义 catalog entry
+Put custom package expressions under `packages/` and keep their source metadata under
+`sources/`.
 
-如果应用需要 `pkexec`、额外系统集成，或 wrapper 名称不能按标准规则对齐，就继续留在 `nixgl-apps.nix`，但改用显式 helper。
+## Troubleshooting
 
-- `standardApp { name = "ayugram-desktop"; ... }` 适合命名不规则但仍属标准 nixGL 包装的应用
-- `customApp { ... }` 适合 `pkexec` 或脚本型应用
-- 需要时仍可直接使用 `mkNixGLApp`
+If a switch fails, build the activation package first:
 
-## 便捷命令别名
-
-重新启动终端或运行 `source ~/.zshrc` 后,你可以使用以下别名:
-
-### `hms` - Home Manager Switch
-快速切换到新配置:
 ```bash
-hms
-```
-等同于:
-```bash
-cd ~/.config/home-manager
-# check remote codex-desktop-linux revision, then update only if it changed
-# refresh nvidia/version and nvidia/hash if needed
-home-manager switch --impure
+nix build '.#homeConfigurations.mingshi.activationPackage' --no-link
 ```
 
-这会先比较本地 lock 和远端 Codex Desktop revision;只有远端变更时才更新 `codex-desktop-linux`,不会滚动 nixpkgs/home-manager 等系统级输入。
+If desktop entries do not appear after a switch, refresh KDE caches manually:
 
-### `hmu` - Home Manager Update
-更新 flake 输入并切换到新配置:
 ```bash
-hmu
-```
-等同于:
-```bash
-cd ~/.config/home-manager
-# refresh nvidia/version and nvidia/hash if needed
-nix flake update
-home-manager switch --impure
+update-desktop-database ~/.local/share/applications
+kbuildsycoca6
 ```
 
-这会:
-1. 更新 `flake.lock` 中的所有依赖(nixpkgs, home-manager 等)
-2. 安装最新版本的软件包
-3. 应用新配置
+If a GUI app fails to launch, check the user journal:
 
-### `hmr` - Home Manager Rollback
-回滚到上一个配置:
 ```bash
-hmr
-```
-等同于:
-```bash
-cd ~/.config/home-manager && home-manager switch --impure --rollback
+journalctl --user -xe
 ```
 
-### `hmgc` - Home Manager GC
-清理旧 generation 和 Nix store:
-```bash
-hmgc
-```
-这会删除旧用户 profile generations、保留最近 3 天的 Home Manager generations、运行 `nix-collect-garbage`,然后用 `nix-store --optimise` 对仍存活的 Nix store 路径做内容去重。
+## Notes
 
-## 推荐工作流程
-
-### 日常使用
-```bash
-# 修改 `home.nix`、`modules/nixgl-runtime.nix` 或其他模块后应用配置
-hms
-
-# 定期更新所有软件(例如每周一次)
-hmu
-
-# 定期清理旧 Nix generations 和重复 store 内容
-hmgc
-```
-
-### 如果更新后有问题
-```bash
-# 立即回滚到上一个版本
-hmr
-```
-
-## 注意事项
-
-1. **Codex Desktop 自动更新**: `hms` 会先检查远端 `codex-desktop-linux` revision,只有变化时才更新,然后应用配置
-2. **全量自动更新**: `hmu` 会更新所有包到最新版本,可能导致破坏性变更
-3. **版本锁定**: 如果你想锁定全部版本,不要运行 `hms` 或 `hmu`,直接使用 `nix run .#home-manager -- switch --flake .`
-4. **NVIDIA 元数据**: `hms` 和 `hmu` 会在切换前尝试刷新 `nvidia/version` 与 `nvidia/hash`
-5. **Nix 清理**: `hmgc` 会删除旧 generation 和未引用的 store path; `nix-store --optimise` 只对仍存活路径做硬链接去重,不会删除当前仍被引用的软件
-6. **回滚**: `hmr` 只能回滚一代,如果需要回滚多代,使用:
-   ```bash
-   home-manager generations  # 查看所有代数
-   home-manager switch --to-generation <number>
-   ```
-
-## Wayland 问题修复
-
-Telegram 和其他 Qt 应用在 Wayland 下通过 `QT_QPA_PLATFORM=xcb` 强制使用 XWayland,确保在 KDE Wayland 和 X11 环境下都能正常工作。
+- `hmu` can bring in broad upstream changes through `flake.lock`; use it deliberately.
+- `hmgc` deletes unreferenced store paths but keeps anything still reachable from live
+  generations.
+- Qt apps that are unstable under native Wayland can be forced through XWayland by
+  setting the app catalog platform to `xcb`.

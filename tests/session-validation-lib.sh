@@ -17,7 +17,7 @@ sv_run_id() {
 }
 
 sv_default_log_dir() {
-  printf '%s/.planning/phases/02-session-validation/artifacts/%s\n' \
+  printf '%s/outputs/session-validation/%s\n' \
     "$sessionValidationRepoRoot" "$(sv_run_id)"
 }
 

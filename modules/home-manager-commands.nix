@@ -85,14 +85,20 @@ let
       [
         "@grep_bin@"
         "@awk_bin@"
-        "@sha256sum_bin@"
-        "@runtime_shell@"
+        "@curl_bin@"
+        "@jq_bin@"
+        "@nix_bin@"
+        "@nix_instantiate_bin@"
+        "@nix_prefetch_url_bin@"
       ]
       [
         "${pkgs.gnugrep}/bin/grep"
         "${pkgs.gawk}/bin/awk"
-        "${pkgs.coreutils}/bin/sha256sum"
-        "${pkgs.runtimeShell}"
+        "${pkgs.curl}/bin/curl"
+        "${pkgs.jq}/bin/jq"
+        "${pkgs.nix}/bin/nix"
+        "${pkgs.nix}/bin/nix-instantiate"
+        "${pkgs.nix}/bin/nix-prefetch-url"
       ]
       (builtins.readFile ../ops/hms-refresh.sh)
   );

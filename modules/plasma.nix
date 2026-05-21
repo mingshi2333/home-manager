@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   home.activation.restartPlasma = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

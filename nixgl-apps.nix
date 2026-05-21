@@ -606,9 +606,10 @@ let
       enable = false;
       pkg = pkgs.qq;
       defaultProfile = "xwayland-safe";
-      exposedProfiles = [ ];
+      exposedProfiles = [ "wayland-test" ];
       profileLabels = {
         xwayland-safe = "Safe";
+        wayland-test = "Wayland test";
       };
       compatibility = {
         health = "affected";

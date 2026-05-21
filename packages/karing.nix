@@ -8,7 +8,7 @@
 }:
 
 let
-  karingSource = (import ./sources/karing.nix { inherit fetchurl; }).x86_64-linux;
+  karingSource = (import ../sources/karing.nix { inherit fetchurl; }).x86_64-linux;
 in
 stdenv.mkDerivation rec {
   pname = "karing";
@@ -40,8 +40,10 @@ stdenv.mkDerivation rec {
     makeWrapper $out/share/karing/karing $out/bin/karing \
       --prefix LD_LIBRARY_PATH : "$out/share/karing/lib:${keybinder3}/lib:/usr/lib64"
 
-    substituteInPlace $out/share/applications/karing.desktop \
-      --replace-fail 'Exec=karing %U' 'Exec=karing %U'
+    if ! grep -qx 'Exec=karing %U' $out/share/applications/karing.desktop; then
+      echo "unexpected Karing desktop Exec line" >&2
+      exit 1
+    fi
 
     runHook postInstall
   '';

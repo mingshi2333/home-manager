@@ -91,6 +91,7 @@ assert_script_contains \
   '^[[:space:]]*if ! remote_rev="\$\(nix flake metadata --json github:ilysenko/codex-desktop-linux \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r '\''\.revision // \.locked\.rev // empty'\''\)"; then$' \
   'expected hms wrapper script to check the remote Codex Desktop revision before updating'
 
+# shellcheck disable=SC2016
 assert_script_contains \
   "$hms_script_text" \
   '^[[:space:]]*if \[ "\$locked_rev" != "\$remote_rev" \]; then$' \

@@ -10,6 +10,7 @@ let
     builtins.attrNames config.local.nixgl.desktopEntries
   );
   managedDesktopFilesText = lib.concatStringsSep " " managedDesktopFiles;
+  xdgDataDirs = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share";
 in
 
 {
@@ -83,39 +84,16 @@ in
       done
     fi
 
-    hash_file="$HOME/.cache/hm-desktop-entries.sha256"
-    tmp_hash=""
-    if command -v ${pkgs.coreutils}/bin/sha256sum >/dev/null 2>&1; then
-      tmp_hash=$(find "$HOME/.local/share/applications" "$HOME/.nix-profile/share/applications" \
-        -maxdepth 1 -type f -name "*.desktop" -print0 2>/dev/null \
-        | sort -z \
-        | xargs -0 ${pkgs.coreutils}/bin/sha256sum 2>/dev/null \
-        | ${pkgs.coreutils}/bin/sha256sum \
-        | ${pkgs.coreutils}/bin/cut -d ' ' -f 1 || true)
-    fi
-
-    if [ -n "$tmp_hash" ] && [ -f "$hash_file" ]; then
-      prev_hash=$(cat "$hash_file" 2>/dev/null || true)
-      if [ "$tmp_hash" = "$prev_hash" ]; then
-        exit 0
-      fi
-    fi
-
-    if [ -n "$tmp_hash" ]; then
-      $DRY_RUN_CMD mkdir -p "$HOME/.cache"
-      $DRY_RUN_CMD printf "%s" "$tmp_hash" > "$hash_file"
-    fi
-
     if [ -x "${pkgs.desktop-file-utils}/bin/update-desktop-database" ]; then
       $DRY_RUN_CMD ${pkgs.desktop-file-utils}/bin/update-desktop-database \
         "$HOME/.local/share/applications" 2>/dev/null || true
     fi
 
     if command -v kbuildsycoca6 &> /dev/null; then
-      XDG_DATA_DIRS="${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share" \
+      XDG_DATA_DIRS="${xdgDataDirs}" \
         $DRY_RUN_CMD kbuildsycoca6 2>/dev/null || true
     elif command -v kbuildsycoca5 &> /dev/null; then
-      XDG_DATA_DIRS="${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share" \
+      XDG_DATA_DIRS="${xdgDataDirs}" \
         $DRY_RUN_CMD kbuildsycoca5 2>/dev/null || true
     fi
   '';

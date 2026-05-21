@@ -1,12 +1,16 @@
 { config, pkgs, ... }:
 
+let
+  xdgDataDirs = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share";
+in
+
 {
   home.sessionVariables = {
     EDITOR = "vim";
     NIXOS_XDG_OPEN_USE_PORTAL = "1";
     GTK_USE_PORTAL = "1";
     WEBKIT_DISABLE_DMABUF_RENDERER = "1";
-    XDG_DATA_DIRS = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share";
+    XDG_DATA_DIRS = xdgDataDirs;
   };
 
   # XDG environment.d configuration for systemd user services
@@ -16,7 +20,7 @@
   '';
 
   xdg.configFile."environment.d/10-xdg-data-dirs.conf".text = ''
-    XDG_DATA_DIRS=${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:/usr/local/share:/usr/share
+    XDG_DATA_DIRS=${xdgDataDirs}
   '';
 
   xdg.configFile."environment.d/30-xdg-portal.conf".text = ''

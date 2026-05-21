@@ -1,0 +1,10 @@
+# AI-generated workflow artifacts
+.planning/
+docs/superpowers/
+.claude/
+outputs/
+cache.db
+
+# Generated local links/files
+result
+zsh-extra.sh

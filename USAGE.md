@@ -59,15 +59,14 @@ Add regular nixGL GUI apps to `nixgl-apps.nix`:
 myapp = standardApp {
   pkg = pkgs.myapp;
   platform = "wayland";
-  workingDirectory = config.home.homeDirectory;
   categories = [ "Utility" ];
 };
 ```
 
 Use `customApp` only when the app needs a custom launcher, special desktop entry, or
 non-standard command wiring.
-Use `workingDirectory` when a GUI app should open file dialogs from a stable default
-directory instead of inheriting the launcher's current directory.
+Desktop entries default to the XDG download directory. Use `workingDirectory` only
+when a GUI app should override that default or `null` to omit `Path=`.
 
 Put custom package expressions under `packages/` and keep their source metadata under
 `sources/`.

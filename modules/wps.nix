@@ -3,6 +3,7 @@
 let
   wpsPackage = pkgs.wpsoffice-cn;
   homeDir = config.home.homeDirectory;
+  defaultWorkingDirectory = config.xdg.userDirs.download or "${homeDir}/Downloads";
 
   mkWrapper = binary: ''
     #!${pkgs.runtimeShell}
@@ -43,6 +44,7 @@ let
       ];
       startupNotify = false;
       settings = {
+        Path = defaultWorkingDirectory;
         StartupWMClass = startupWMClass;
         InitialPreference = "3";
         X-DBUS-ServiceName = "";

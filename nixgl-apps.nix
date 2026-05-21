@@ -12,6 +12,7 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   codexDesktopPkg = codexDesktopLinux.packages.${system}.default;
   compatibilityScope = "fedora-kde-wayland";
+  defaultWorkingDirectory = config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads";
   allowedHealthStates = [
     "affected"
     "suspected"
@@ -232,7 +233,7 @@ let
       comment,
       categories,
       icon,
-      workingDirectory ? null,
+      workingDirectory ? defaultWorkingDirectory,
       desktopSettings ? { },
       mimeTypes ? [ ],
       execArgs ? "",
@@ -385,6 +386,7 @@ let
       desktopId ? catalogId,
       desktopEntry,
       mimeAssoc ? { },
+      workingDirectory ? defaultWorkingDirectory,
     }:
     let
       compatibilityMeta = normalizeCompatibilityMeta desktopId compatibility;
@@ -393,6 +395,15 @@ let
         meta = compatibilityMeta;
       };
       aliases = builtins.attrNames shellAliases;
+      desktopEntryHasPath = (desktopEntry.settings or { }) ? Path;
+      desktopEntrySettings =
+        (desktopEntry.settings or { })
+        // pkgs.lib.optionalAttrs (workingDirectory != null && !desktopEntryHasPath) {
+          Path = workingDirectory;
+        };
+      desktopEntryWithDefaults =
+        desktopEntry
+        // pkgs.lib.optionalAttrs (desktopEntrySettings != { }) { settings = desktopEntrySettings; };
     in
     {
       inherit enable;
@@ -407,10 +418,10 @@ let
                 shellAliases
                 binScripts
                 desktopId
-                desktopEntry
                 mimeAssoc
                 compatibilityPolicy
                 ;
+              desktopEntry = desktopEntryWithDefaults;
               inventory = mkInventoryRecord {
                 inherit
                   enable
@@ -757,7 +768,6 @@ let
         "Development"
       ];
       icon = "codex-desktop";
-      workingDirectory = config.home.homeDirectory;
       mimeTypes = [
         "x-scheme-handler/codex"
         "x-scheme-handler/codex-browser-sidebar"

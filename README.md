@@ -45,7 +45,6 @@ Regular nixGL-wrapped applications belong in `nixgl-apps.nix`:
 myapp = standardApp {
   pkg = pkgs.myapp;
   platform = "wayland";
-  workingDirectory = config.home.homeDirectory;
   categories = [ "Utility" ];
   mimeTypes = [ "x-scheme-handler/myapp" ];
   execArgs = "%U";
@@ -54,8 +53,9 @@ myapp = standardApp {
 
 Use `standardApp` for normal nixGL wrappers and `customApp` for hand-written
 launchers, `pkexec` helpers, or applications that need unusual desktop metadata.
-Set `workingDirectory` when the app's file picker or open-folder dialog should
-start somewhere other than the launcher's inherited directory.
+Desktop entries default to `config.xdg.userDirs.download` as their working
+directory. Set `workingDirectory` only when an app needs a different default or
+`null` to omit `Path=`.
 
 Custom package expressions belong in `packages/`, and their source metadata belongs
 in `sources/`. For example, Karing is split between `packages/karing.nix` and

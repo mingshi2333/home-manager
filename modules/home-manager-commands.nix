@@ -53,6 +53,29 @@ let
       '';
       executable = true;
     };
+    ".local/bin/hmb" = {
+      text = ''
+        #!${pkgs.runtimeShell}
+        set -euo pipefail
+        repo_dir="$HOME/.config/home-manager"
+        desktop_dir=""
+
+        if command -v xdg-user-dir >/dev/null 2>&1; then
+          desktop_dir="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+        fi
+
+        if [ -z "$desktop_dir" ] || [ "$desktop_dir" = "$HOME" ]; then
+          desktop_dir="$HOME/Desktop"
+        fi
+
+        build_dir="$desktop_dir/home-manager/build/manual"
+        mkdir -p "$build_dir"
+        rm -f "$build_dir/result"
+        cd "$build_dir"
+        exec nix run "$repo_dir#home-manager" -- build --flake "$repo_dir"
+      '';
+      executable = true;
+    };
     ".local/bin/hmgc" = {
       text = ''
         #!${pkgs.runtimeShell}
@@ -115,6 +138,7 @@ in
             hms = "~/.local/bin/hms";
             hmu = "~/.local/bin/hmu";
             hmr = "~/.local/bin/hmr";
+            hmb = "~/.local/bin/hmb";
             hmgc = "~/.local/bin/hmgc";
           };
         in

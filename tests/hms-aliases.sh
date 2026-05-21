@@ -3,11 +3,15 @@
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=tests/session-validation-lib.sh
+source "$repo_root/tests/session-validation-lib.sh"
 alias_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".zsh_aliases\".text --raw)
 hms_script_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".local/bin/hms\".text --raw)
 hmu_script_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".local/bin/hmu\".text --raw)
 hmr_script_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".local/bin/hmr\".text --raw)
+hmb_script_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".local/bin/hmb\".text --raw)
 hmgc_script_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval .#homeConfigurations.mingshi.config.home.file.\".local/bin/hmgc\".text --raw)
+hm_build_dir="$(sv_default_output_root)/build/hms-aliases"
 
 # Keep the command-surface check intentionally narrow: these aliases should
 # forward to generated repo-local wrapper scripts rather than hardcoded nix binaries.
@@ -15,6 +19,7 @@ hmgc_script_text=$(cd "$repo_root" && nix --extra-experimental-features 'nix-com
 hms_alias=$(printf '%s\n' "$alias_text" | grep '^alias hms=' || true)
 hmu_alias=$(printf '%s\n' "$alias_text" | grep '^alias hmu=' || true)
 hmr_alias=$(printf '%s\n' "$alias_text" | grep '^alias hmr=' || true)
+hmb_alias=$(printf '%s\n' "$alias_text" | grep '^alias hmb=' || true)
 hmgc_alias=$(printf '%s\n' "$alias_text" | grep '^alias hmgc=' || true)
 
 assert_alias_matches() {
@@ -28,7 +33,7 @@ assert_alias_matches() {
   fi
 }
 
-for alias_name in hms hmu hmr hmgc; do
+for alias_name in hms hmu hmr hmb hmgc; do
   if ! printf '%s\n' "$alias_text" | grep -q "^alias ${alias_name}="; then
     echo "missing alias: ${alias_name}" >&2
     exit 1
@@ -60,6 +65,11 @@ assert_alias_matches \
   "$hmr_alias" \
   "^alias hmr='~/.local/bin/hmr'$" \
   "expected hmr alias to invoke the generated hmr wrapper script"
+
+assert_alias_matches \
+  "$hmb_alias" \
+  "^alias hmb='~/.local/bin/hmb'$" \
+  "expected hmb alias to invoke the generated hmb wrapper script"
 
 assert_alias_matches \
   "$hmgc_alias" \
@@ -122,14 +132,32 @@ assert_script_contains \
   "nix run \.#home-manager -- switch --rollback --flake \." \
   'expected hmr wrapper script to use the flake-locked home-manager CLI'
 
+# shellcheck disable=SC2016
+assert_script_contains \
+  "$hmb_script_text" \
+  'build_dir="\$desktop_dir/home-manager/build/manual"' \
+  'expected hmb wrapper script to build under the desktop output directory'
+
+# shellcheck disable=SC2016
+assert_script_contains \
+  "$hmb_script_text" \
+  'nix run "\$repo_dir#home-manager" -- build --flake "\$repo_dir"' \
+  'expected hmb wrapper script to build the local flake from the desktop output directory'
+
 assert_script_contains \
   "$hmgc_script_text" \
   '/nix/store/[^[:space:]]*-hmgc-cleanup' \
   'expected hmgc wrapper script to invoke generated cleanup script'
 
-managed_aliases=$(printf '%s\n' "$hms_alias" "$hmu_alias" "$hmr_alias" "$hmgc_alias")
+managed_aliases=$(printf '%s\n' "$hms_alias" "$hmu_alias" "$hmr_alias" "$hmb_alias" "$hmgc_alias")
 
-hmgc_script_path=$(cd "$repo_root" && nix run .#home-manager -- build --flake . >/dev/null && sed -n "s/^exec \(\/nix\/store\/[^[:space:]]*-hmgc-cleanup\)$/\1/p" result/home-files/.local/bin/hmgc)
+mkdir -p "$hm_build_dir"
+rm -f "$hm_build_dir/result"
+hmgc_script_path=$(
+  cd "$hm_build_dir"
+  nix run "$repo_root#home-manager" -- build --flake "$repo_root" >/dev/null
+  sed -n "s/^exec \(\/nix\/store\/[^[:space:]]*-hmgc-cleanup\)$/\1/p" result/home-files/.local/bin/hmgc
+)
 
 if ! grep -Fq 'home-manager expire-generations "-3 days"' "$hmgc_script_path"; then
   echo 'expected hmgc cleanup script to keep only 3 days of Home Manager generations' >&2

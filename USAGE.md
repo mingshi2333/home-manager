@@ -20,6 +20,12 @@ Roll back one generation:
 hmr
 ```
 
+Build and inspect the activation package without writing `result` in the repo:
+
+```bash
+hmb
+```
+
 Clean old generations and optimise the Nix store:
 
 ```bash
@@ -38,6 +44,9 @@ nix run .#home-manager -- switch --flake .
 `hmu` runs `nix flake update` before the same switch path.
 
 `hmr` uses the flake-locked Home Manager package to roll back the previous generation.
+
+`hmb` builds the local flake from `~/Desktop/home-manager/build/manual` and leaves
+the `result` link there.
 
 `hmgc` removes old user profile generations, expires Home Manager generations older
 than three days, runs `nix-collect-garbage`, and finishes with `nix-store --optimise`.
@@ -79,6 +88,20 @@ If a GUI app fails to launch, check the user journal:
 
 ```bash
 journalctl --user -xe
+```
+
+## Local Output Directory
+
+Repository tests and manual diagnostics should keep generated logs and `result`
+links outside `~/.config/home-manager`. By default, the helper scripts use the XDG
+desktop directory under `home-manager/`.
+
+For a manual Home Manager build that leaves a browsable `result` link:
+
+```bash
+mkdir -p "$(xdg-user-dir DESKTOP)/home-manager/build/manual"
+cd "$(xdg-user-dir DESKTOP)/home-manager/build/manual"
+nix run ~/.config/home-manager#home-manager -- build --flake ~/.config/home-manager
 ```
 
 ## Notes

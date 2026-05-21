@@ -16,9 +16,22 @@ sv_run_id() {
   date -u +"%Y%m%dT%H%M%SZ"
 }
 
+sv_default_output_root() {
+  local desktopDir=""
+
+  if command -v xdg-user-dir >/dev/null 2>&1; then
+    desktopDir=$(xdg-user-dir DESKTOP 2>/dev/null || true)
+  fi
+
+  if [[ -z "$desktopDir" || "$desktopDir" == "$HOME" ]]; then
+    desktopDir="$HOME/Desktop"
+  fi
+
+  printf '%s/home-manager\n' "$desktopDir"
+}
+
 sv_default_log_dir() {
-  printf '%s/outputs/session-validation/%s\n' \
-    "$sessionValidationRepoRoot" "$(sv_run_id)"
+  printf '%s/session-validation/%s\n' "$(sv_default_output_root)" "$(sv_run_id)"
 }
 
 sv_log() {

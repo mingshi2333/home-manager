@@ -27,6 +27,7 @@ generated planning notes, cache files, and editor state are ignored.
 hms   # refresh managed metadata, then switch through the flake-locked Home Manager
 hmu   # update flake inputs, refresh metadata, then switch
 hmr   # roll back the previous Home Manager generation
+hmb   # build into the desktop output directory and leave a browsable result link
 hmgc  # clean old generations, run Nix GC, then optimise the Nix store
 ```
 
@@ -76,6 +77,12 @@ bash -n tests/*.sh ops/hms-refresh.sh
 shellcheck tests/*.sh ops/hms-refresh.sh
 nix flake check --no-build --extra-experimental-features 'nix-command flakes'
 ```
+
+Validation logs and temporary Home Manager build links should stay outside this
+repository. The helper tests default to the XDG desktop directory under
+`home-manager/`, for example `~/Desktop/home-manager/session-validation/...` and
+`~/Desktop/home-manager/build/...`. Use `hmb` for a manual build that leaves
+`~/Desktop/home-manager/build/manual/result`.
 
 ## Desktop Integration
 

@@ -232,6 +232,8 @@ let
       comment,
       categories,
       icon,
+      workingDirectory ? null,
+      desktopSettings ? { },
       mimeTypes ? [ ],
       execArgs ? "",
       dbusService ? null,
@@ -290,6 +292,10 @@ let
         terminal = false;
         type = "Application";
         inherit comment categories icon;
+      }
+      // pkgs.lib.optionalAttrs (desktopSettings != { } || workingDirectory != null) {
+        settings =
+          desktopSettings // pkgs.lib.optionalAttrs (workingDirectory != null) { Path = workingDirectory; };
       }
       // pkgs.lib.optionalAttrs (mimeTypes != [ ]) { mimeType = mimeTypes; };
       mimeAssoc =
@@ -751,6 +757,7 @@ let
         "Development"
       ];
       icon = "codex-desktop";
+      workingDirectory = config.home.homeDirectory;
       mimeTypes = [
         "x-scheme-handler/codex"
         "x-scheme-handler/codex-browser-sidebar"

@@ -65,8 +65,9 @@ myapp = standardApp {
 
 Use `customApp` only when the app needs a custom launcher, special desktop entry, or
 non-standard command wiring.
-Desktop entries default to the XDG download directory. Use `workingDirectory` only
-when a GUI app should override that default or `null` to omit `Path=`.
+Desktop entries default to the `nix` subdirectory inside the XDG download
+directory. Use `workingDirectory` only when a GUI app should override that default
+or `null` to omit `Path=`.
 
 Put custom package expressions under `packages/` and keep their source metadata under
 `sources/`.

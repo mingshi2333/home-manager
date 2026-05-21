@@ -53,9 +53,9 @@ myapp = standardApp {
 
 Use `standardApp` for normal nixGL wrappers and `customApp` for hand-written
 launchers, `pkexec` helpers, or applications that need unusual desktop metadata.
-Desktop entries default to `config.xdg.userDirs.download` as their working
-directory. Set `workingDirectory` only when an app needs a different default or
-`null` to omit `Path=`.
+Desktop entries default to `config.xdg.userDirs.download + "/nix"` as their
+working directory. Set `workingDirectory` only when an app needs a different
+default or `null` to omit `Path=`.
 
 Custom package expressions belong in `packages/`, and their source metadata belongs
 in `sources/`. For example, Karing is split between `packages/karing.nix` and

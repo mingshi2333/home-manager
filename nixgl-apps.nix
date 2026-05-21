@@ -12,7 +12,9 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   codexDesktopPkg = codexDesktopLinux.packages.${system}.default;
   compatibilityScope = "fedora-kde-wayland";
-  defaultWorkingDirectory = config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads";
+  defaultWorkingDirectory = "${
+    config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads"
+  }/nix";
   allowedHealthStates = [
     "affected"
     "suspected"

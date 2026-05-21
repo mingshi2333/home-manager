@@ -25,14 +25,15 @@ eval_json() {
 }
 
 download_dir=$(eval_raw 'xdg.userDirs.download')
+expected_working_dir="${download_dir}/nix"
 nixgl_entries_json=$(eval_json 'local.nixgl.desktopEntries')
 codex_exec=$(eval_raw 'xdg.desktopEntries."codex-desktop".exec')
 wps_writer_path=$(eval_raw 'xdg.desktopEntries."wps-office-wps".settings.Path')
 
-if ! jq -e --arg path "$download_dir" \
+if ! jq -e --arg path "$expected_working_dir" \
   'to_entries | all(.value.settings.Path == $path)' \
   <<<"$nixgl_entries_json" >/dev/null; then
-  echo "expected every nixGL desktop entry to default Path to ${download_dir}" >&2
+  echo "expected every nixGL desktop entry to default Path to ${expected_working_dir}" >&2
   exit 1
 fi
 
@@ -41,7 +42,7 @@ if [[ "$codex_exec" != *' %u' ]]; then
   exit 1
 fi
 
-if [[ "$wps_writer_path" != "$download_dir" ]]; then
-  echo "expected WPS desktop entry Path to be ${download_dir}, got ${wps_writer_path}" >&2
+if [[ "$wps_writer_path" != "$expected_working_dir" ]]; then
+  echo "expected WPS desktop entry Path to be ${expected_working_dir}, got ${wps_writer_path}" >&2
   exit 1
 fi

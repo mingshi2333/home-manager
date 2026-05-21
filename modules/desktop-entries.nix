@@ -10,6 +10,9 @@ let
     builtins.attrNames config.local.nixgl.desktopEntries
   );
   managedDesktopFilesText = lib.concatStringsSep " " managedDesktopFiles;
+  defaultWorkingDirectory = "${
+    config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads"
+  }/nix";
   xdgDataDirs = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share";
 in
 
@@ -29,6 +32,7 @@ in
   xdg.desktopEntries = config.local.nixgl.desktopEntries;
 
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter [ "reloadSystemd" ] ''
+    $DRY_RUN_CMD mkdir -p "${defaultWorkingDirectory}"
     $DRY_RUN_CMD mkdir -p $HOME/.local/share/applications
 
     for app in ${pkgs.lib.concatStringsSep " " config.local.nixgl.dedupApps}; do

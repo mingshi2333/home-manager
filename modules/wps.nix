@@ -3,7 +3,7 @@
 let
   wpsPackage = pkgs.wpsoffice-cn;
   homeDir = config.home.homeDirectory;
-  defaultWorkingDirectory = config.xdg.userDirs.download or "${homeDir}/Downloads";
+  defaultWorkingDirectory = "${config.xdg.userDirs.download or "${homeDir}/Downloads"}/nix";
 
   mkWrapper = binary: ''
     #!${pkgs.runtimeShell}

@@ -72,6 +72,36 @@ or `null` to omit `Path=`.
 Put custom package expressions under `packages/` and keep their source metadata under
 `sources/`.
 
+## Bitwarden Auto-Type
+
+Home Manager installs the KDE Wayland path through `rbw`, plain `rofi-rbw`,
+`fuzzel`, `wl-clipboard`, `ydotool`, and `pinentry-qt`. It also owns both
+`~/.config/rofi-rbw.rc` and `~/.config/rbw/config.json`.
+
+Declare the account in `config/rbw/config.json`:
+
+```json
+{
+  "email": "your-email@example.com",
+  "base_url": "https://your-vaultwarden.example.com"
+}
+```
+
+Then apply and unlock:
+
+```bash
+hms
+rbw sync
+rbw unlock
+rbw ls
+```
+
+Bind KDE's shortcut command to:
+
+```bash
+rofi-rbw
+```
+
 ## Troubleshooting
 
 If a switch fails, build the activation package first:

@@ -67,6 +67,7 @@ Run focused checks before committing:
 
 ```bash
 bash tests/source-boundaries.sh
+bash tests/bitwarden-autotype.sh
 bash tests/karing-package-boundary.sh
 bash tests/wps-wrapper.sh
 bash tests/hms-aliases.sh
@@ -92,6 +93,12 @@ repository. The helper tests default to the XDG desktop directory under
 Home Manager owns the generated desktop entries, MIME associations, wrapper scripts,
 and KDE cache refresh hooks. The active modules refresh the desktop database and KDE
 service cache on activation, so normal changes should only require `hms`.
+
+Bitwarden auto-type is managed in `modules/bitwarden-autotype.nix`. It installs
+`rbw`, plain `rofi-rbw`, `fuzzel`, `wl-clipboard`, `ydotool`, and `pinentry-qt`;
+plain `rofi-rbw` is intentional because the Wayland wrapper forces `wtype` while
+this desktop uses `ydotool` for KDE Wayland typing. The `rbw` config is a normal
+repo file at `config/rbw/config.json` deployed by Home Manager.
 
 WPS Office is managed in `modules/wps.nix` because it needs multiple wrapper-backed
 desktop entries. Most other GUI apps should stay in the shared `nixgl-apps.nix`

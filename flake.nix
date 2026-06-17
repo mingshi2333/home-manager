@@ -24,7 +24,11 @@
     };
 
     claude-desktop-debian = {
-      url = "github:aaddrick/claude-desktop-debian";
+      # Pinned: the local patches in patches/claude-desktop-*.patch target this
+      # exact upstream revision. Leaving it floating lets `hms-update` bump it to
+      # a tree where the patches no longer apply and the build breaks. Bump this
+      # rev deliberately together with refreshing the patches.
+      url = "github:aaddrick/claude-desktop-debian/2d1d0c59ffb94c0de8a0c5627d03c28099599792";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

@@ -1,0 +1,20 @@
+--- a/nix/fhs.nix
++++ b/nix/fhs.nix
+@@ -7,6 +7,7 @@
+   docker-compose,
+   openssl,
+   glibc,
++  git,
+   uv,
+ }:
+ buildFHSEnv {
+@@ -16,8 +17,9 @@ buildFHSEnv {
+     bubblewrap
+     claude-desktop
+     docker
+     docker-compose
++    git
+     glibc
+     nodejs
+     openssl
+     uv

@@ -4,6 +4,7 @@
   nixGLBin,
   fcitxEnv,
   codexDesktopLinux,
+  claudeDesktopDebian,
   enabledApps ? null,
   ...
 }:
@@ -11,6 +12,31 @@
 let
   system = pkgs.stdenv.hostPlatform.system;
   codexDesktopPkg = codexDesktopLinux.packages.${system}.default;
+
+  # The upstream aaddrick flake pins Claude Desktop 1.12603.1, whose minified
+  # bundle emits the `--add-dir` dispatch loop at two call sites. Its #649
+  # guard patch asserts a single occurrence and aborts the build. Rebuild the
+  # package from a locally patched copy of the upstream source so the guard
+  # filters every occurrence instead of bailing out.
+  #
+  # The upstream FHS sandbox (buildFHSEnv) replaces the host /usr, so Claude
+  # Desktop never sees the host's git and prompts to install it on every
+  # launch. The git patch adds git to the sandbox targetPkgs.
+  claudeDesktopSrc = pkgs.applyPatches {
+    name = "claude-desktop-debian-patched";
+    src = claudeDesktopDebian;
+    patches = [
+      ./patches/claude-desktop-adddir-guard.patch
+      ./patches/claude-desktop-fhs-git.patch
+    ];
+  };
+  claudeDesktopNodePty = pkgs.callPackage "${claudeDesktopSrc}/nix/node-pty.nix" { };
+  claudeDesktopUnwrapped = pkgs.callPackage "${claudeDesktopSrc}/nix/claude-desktop.nix" {
+    node-pty = claudeDesktopNodePty;
+  };
+  claudeDesktopPkg = pkgs.callPackage "${claudeDesktopSrc}/nix/fhs.nix" {
+    claude-desktop = claudeDesktopUnwrapped;
+  };
   compatibilityScope = "fedora-kde-wayland";
   defaultWorkingDirectory = "${
     config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads"
@@ -773,6 +799,36 @@ let
       mimeTypes = [
         "x-scheme-handler/codex"
         "x-scheme-handler/codex-browser-sidebar"
+      ];
+      execArgs = "%u";
+    };
+
+    claude-desktop = standardApp {
+      pkg = claudeDesktopPkg;
+      name = "claude-desktop";
+      binary = "claude-desktop";
+      platform = "x11";
+      extraEnv = {
+        ELECTRON_OZONE_PLATFORM_HINT = "x11";
+        NIXOS_OZONE_WL = "0";
+      };
+      extraFlags = [
+        "--ozone-platform=x11"
+      ];
+      compatibility = {
+        health = "unknown";
+        notes = [
+          "Wrapped with nixGL on Fedora KDE Wayland; uses the aaddrick Claude Desktop Debian flake FHS package so MCP servers have a conventional runtime environment."
+        ];
+      };
+      desktopName = "Claude Desktop (nixGL)";
+      comment = "Claude Desktop for Linux (nixGL)";
+      categories = [
+        "Development"
+      ];
+      icon = "claude-desktop";
+      mimeTypes = [
+        "x-scheme-handler/claude"
       ];
       execArgs = "%u";
     };

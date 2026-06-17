@@ -11,23 +11,32 @@ let
         cd ~/.config/home-manager
         export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
         export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
-        locked_rev="$(nix flake metadata --json . | ${pkgs.jq}/bin/jq -r '.locks.nodes."codex-desktop-linux".locked.rev // empty')"
-        if ! remote_rev="$(nix flake metadata --json github:ilysenko/codex-desktop-linux | ${pkgs.jq}/bin/jq -r '.revision // .locked.rev // empty')"; then
-          echo "[hms] unable to query remote codex-desktop-linux revision" >&2
-          exit 1
-        fi
+        flake_metadata="$(nix flake metadata --json .)"
 
-        if [ -z "$remote_rev" ]; then
-          echo "[hms] unable to resolve remote codex-desktop-linux revision" >&2
-          exit 1
-        fi
+        update_input_if_changed() {
+          input_name="$1"
+          input_url="$2"
+          locked_rev="$(printf '%s\n' "$flake_metadata" | ${pkgs.jq}/bin/jq -r --arg input "$input_name" '.locks.nodes[$input].locked.rev // empty')"
+          if ! remote_rev="$(nix flake metadata --json "$input_url" | ${pkgs.jq}/bin/jq -r '.revision // .locked.rev // empty')"; then
+            echo "[hms] unable to query $input_name revision" >&2
+            exit 1
+          fi
 
-        if [ "$locked_rev" != "$remote_rev" ]; then
-          echo "[hms] updating codex-desktop-linux: ''${locked_rev:-missing} -> $remote_rev"
-          nix flake update codex-desktop-linux
-        else
-          echo "[hms] codex-desktop-linux already latest: $locked_rev"
-        fi
+          if [ -z "$remote_rev" ]; then
+            echo "[hms] unable to resolve $input_name revision" >&2
+            exit 1
+          fi
+
+          if [ "$locked_rev" != "$remote_rev" ]; then
+            echo "[hms] updating $input_name: ''${locked_rev:-missing} -> $remote_rev"
+            nix flake update "$input_name"
+          else
+            echo "[hms] $input_name already latest: $locked_rev"
+          fi
+        }
+
+        update_input_if_changed codex-desktop-linux github:ilysenko/codex-desktop-linux
+        update_input_if_changed claude-desktop-debian github:aaddrick/claude-desktop-debian
         exec ${refreshScript}
       '';
       executable = true;

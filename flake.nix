@@ -22,6 +22,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "nixgl/flake-utils";
     };
+
+    claude-desktop-debian = {
+      url = "github:aaddrick/claude-desktop-debian";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -41,6 +46,9 @@
 
       pkgs = import nixpkgs {
         inherit system;
+        # Claude Desktop ships under an unfree license; allow just that package
+        # (we build it locally from a patched aaddrick source in nixgl-apps.nix).
+        config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "claude-desktop" ];
         overlays = [
           # Temporary workaround: dwarfs-0.12.4 fails with boost 1.89 (missing boost_system).
           (final: prev: {
@@ -62,6 +70,7 @@
         extraSpecialArgs = {
           inherit username;
           codexDesktopLinux = inputs.codex-desktop-linux;
+          claudeDesktopDebian = inputs.claude-desktop-debian;
         };
 
         modules = [

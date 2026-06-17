@@ -57,10 +57,13 @@ in
 
     for app in ${pkgs.lib.concatStringsSep " " config.local.nixgl.dedupApps}; do
       for desktop in $HOME/.local/share/applications/$app*.desktop; do
-        [ -e "$desktop" ] || continue
+        # Keep broken symlinks in scope too ([ -e ] follows the link).
+        [ -e "$desktop" ] || [ -L "$desktop" ] || continue
         if [ -L "$desktop" ]; then
-          target=$(readlink -f "$desktop")
-          case "$target" in
+          # Compare the RAW link target. $HOME/.nix-profile is itself a symlink,
+          # so `readlink -f` would resolve it to the /nix/store profile path and
+          # the $HOME/.nix-profile prefix below would never match.
+          case "$(readlink "$desktop")" in
             $HOME/.nix-profile/share/applications/*) ;;
             *) $DRY_RUN_CMD rm -f "$desktop" ;;
           esac
@@ -72,17 +75,14 @@ in
 
     if [ -d "$HOME/.local/share/applications" ]; then
       for desktop in $HOME/.local/share/applications/*.desktop; do
-        [ -e "$desktop" ] || continue
-        if [ -L "$desktop" ]; then
-          target=$(readlink -f "$desktop")
-          case "$target" in
-            $HOME/.nix-profile/share/applications/*)
-              if [ ! -e "$target" ]; then
-                $DRY_RUN_CMD rm -f "$desktop"
-              fi
-              ;;
-          esac
-        fi
+        # Prune orphaned symlinks into the HM profile (app removed/renamed).
+        # Must include BROKEN symlinks: [ -e ] is false once the target is gone,
+        # so guard on [ -L ] and skip only links whose target still exists.
+        [ -L "$desktop" ] || continue
+        [ -e "$desktop" ] && continue
+        case "$(readlink "$desktop")" in
+          $HOME/.nix-profile/share/applications/*) $DRY_RUN_CMD rm -f "$desktop" ;;
+        esac
       done
     fi
 
@@ -96,7 +96,7 @@ in
           *" $name "*)
             local_link="$HOME/.local/share/applications/$name"
             if [ -L "$local_link" ]; then
-              target=$(readlink -f "$local_link")
+              target=$(readlink "$local_link")
               case "$target" in
                 $HOME/.nix-profile/share/applications/*) $DRY_RUN_CMD rm -f "$local_link" ;;
               esac

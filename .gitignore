@@ -11,3 +11,6 @@ AGENTS.md
 CLAUDE.md
 outputs/
 cache.db
+
+# Sentry crash-reporter runtime cache (dropped by Electron apps)
+.sentry-native/

@@ -14,6 +14,24 @@ let
     config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads"
   }/nix";
   xdgDataDirs = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share";
+  mkDesktopItemPackage = desktopId: entry:
+    pkgs.makeDesktopItem {
+      name = desktopId;
+      desktopName = entry.name;
+      genericName = entry.genericName or null;
+      noDisplay = entry.noDisplay or null;
+      comment = entry.comment or null;
+      icon = entry.icon or null;
+      type = entry.type or "Application";
+      exec = entry.exec or null;
+      terminal = entry.terminal or false;
+      actions = entry.actions or { };
+      mimeTypes = entry.mimeType or [ ];
+      categories = entry.categories or [ ];
+      startupNotify = entry.startupNotify or null;
+      prefersNonDefaultGPU = entry.prefersNonDefaultGPU or null;
+      extraConfig = entry.settings or { };
+    };
 in
 
 {
@@ -29,7 +47,9 @@ in
     };
   };
 
-  xdg.desktopEntries = config.local.nixgl.desktopEntries;
+  home.packages = map lib.hiPrio (
+    lib.mapAttrsToList mkDesktopItemPackage config.local.nixgl.desktopEntries
+  );
 
   home.activation.refreshDesktopDatabase = config.lib.dag.entryAfter [ "reloadSystemd" ] ''
     $DRY_RUN_CMD mkdir -p "${defaultWorkingDirectory}"
@@ -81,6 +101,7 @@ in
                 $HOME/.nix-profile/share/applications/*) $DRY_RUN_CMD rm -f "$local_link" ;;
               esac
             fi
+            $DRY_RUN_CMD ln -sf "$desktop" "$local_link"
             continue
             ;;
         esac

@@ -93,24 +93,44 @@ assert_script_contains \
 
 assert_script_contains \
   "$hms_script_text" \
-  '^locked_rev="\$\(nix flake metadata --json \. \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r '\''\.locks\.nodes\."codex-desktop-linux"\.locked\.rev // empty'\''\)"$' \
-  'expected hms wrapper script to read the locked Codex Desktop revision before updating'
+  '^flake_metadata="\$\(nix flake metadata --json \.\)"$' \
+  'expected hms wrapper script to read local flake metadata before updating desktop inputs'
 
 assert_script_contains \
   "$hms_script_text" \
-  '^[[:space:]]*if ! remote_rev="\$\(nix flake metadata --json github:ilysenko/codex-desktop-linux \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r '\''\.revision // \.locked\.rev // empty'\''\)"; then$' \
-  'expected hms wrapper script to check the remote Codex Desktop revision before updating'
+  '^update_input_if_changed\(\) \{$' \
+  'expected hms wrapper script to share desktop input update logic'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^[[:space:]]*locked_rev="\$\(printf '\''%s\\n'\'' "\$flake_metadata" \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r --arg input "\$input_name" '\''\.locks\.nodes\[\$input\]\.locked\.rev // empty'\''\)"$' \
+  'expected hms wrapper script to read each locked desktop input revision by input name'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^[[:space:]]*if ! remote_rev="\$\(nix flake metadata --json "\$input_url" \| /nix/store/[^[:space:]]*-jq-[^[:space:]]*/bin/jq -r '\''\.revision // \.locked\.rev // empty'\''\)"; then$' \
+  'expected hms wrapper script to check each remote desktop input revision before updating'
 
 # shellcheck disable=SC2016
 assert_script_contains \
   "$hms_script_text" \
   '^[[:space:]]*if \[ "\$locked_rev" != "\$remote_rev" \]; then$' \
-  'expected hms wrapper script to update Codex Desktop only when the remote revision differs'
+  'expected hms wrapper script to update desktop inputs only when the remote revision differs'
 
 assert_script_contains \
   "$hms_script_text" \
-  '^[[:space:]]*nix flake update codex-desktop-linux$' \
-  'expected hms wrapper script to update only the Codex Desktop input when needed'
+  '^[[:space:]]*nix flake update "\$input_name"$' \
+  'expected hms wrapper script to update only the changed desktop input when needed'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^update_input_if_changed codex-desktop-linux github:ilysenko/codex-desktop-linux$' \
+  'expected hms wrapper script to update Codex Desktop when needed'
+
+assert_script_contains \
+  "$hms_script_text" \
+  '^update_input_if_changed claude-desktop-debian github:aaddrick/claude-desktop-debian$' \
+  'expected hms wrapper script to update Claude Desktop when needed'
 
 assert_script_contains \
   "$hmu_script_text" \

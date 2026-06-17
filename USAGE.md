@@ -75,7 +75,7 @@ Put custom package expressions under `packages/` and keep their source metadata 
 ## Bitwarden Auto-Type
 
 Home Manager installs the KDE Wayland path through `rbw`, plain `rofi-rbw`,
-`fuzzel`, `wl-clipboard`, `ydotool`, and `pinentry-qt`. It also owns both
+`fuzzel`, `wl-clipboard`, `xdotool`, `ydotool`, and `pinentry-qt`. It also owns both
 `~/.config/rofi-rbw.rc` and `~/.config/rbw/config.json`.
 
 Declare the account in `config/rbw/config.json`:
@@ -96,10 +96,39 @@ rbw unlock
 rbw ls
 ```
 
-Bind KDE's shortcut command to:
+Home Manager binds one shortcut to remember:
 
-```bash
-rofi-rbw
+```text
+Ctrl + Alt + B -> Bitwarden action menu
+```
+
+The menu has these actions:
+
+```text
+Login - username/password
+Login + TOTP - same page
+Copy TOTP - paste yourself
+Type TOTP - current field
+X11 Login - fallback
+```
+
+`rofi-rbw` does not inspect the target page. If an account needs a remembered
+typing order, add a custom Bitwarden field on that item:
+
+```text
+_autotype = username:tab:password:tab:totp
+```
+
+Use `_autotype = username:tab:password` for normal one-page login forms and
+`_autotype = username:tab:password:tab:totp:enter` only when pressing Enter is
+safe for that account. Two-step TOTP pages should leave TOTP out of `_autotype`;
+after password auto-type, paste the copied TOTP into the second page.
+
+Direct fallback shortcuts still exist, but they are optional:
+
+```text
+Ctrl + Alt + O -> username, password, and same-page TOTP
+Ctrl + Alt + Shift + B -> xdotool fallback for XWayland/X11 apps
 ```
 
 ## Troubleshooting

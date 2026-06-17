@@ -74,13 +74,13 @@ portal_structural_checks() {
 
   if (
     cd "$sessionValidationRepoRoot"
-    nix eval --json '.#homeConfigurations.mingshi.config.xdg.desktopEntries'
+    nix eval --json '.#homeConfigurations.mingshi.config.local.nixgl.desktopEntries'
   ) >"$desktopEntriesJson" 2>"$outputDir/desktop-entries-eval.stderr"; then
     sv_write_status "$outputDir/desktop-entries-eval.env" ok mode nix-eval
   else
     sv_write_status "$outputDir/desktop-entries-eval.env" fallback \
       mode local-desktop-files \
-      reason unrelated-xdg.desktopEntries-evaluation-failure
+      reason unrelated-local.nixgl.desktopEntries-evaluation-failure
   fi
 }
 

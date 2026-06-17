@@ -8,11 +8,11 @@ wps_script=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command f
 wpspdf_script=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.home.file.".local/bin/wpspdf".text' --raw)
 wps_et_script=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.home.file.".local/bin/et".text' --raw)
 wps_wpp_script=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.home.file.".local/bin/wpp".text' --raw)
-wps_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.xdg.desktopEntries."wps-office-prometheus".exec' --raw)
-wpspdf_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.xdg.desktopEntries."wps-office-pdf".exec' --raw)
-wps_writer_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.xdg.desktopEntries."wps-office-wps".exec' --raw)
-wps_et_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.xdg.desktopEntries."wps-office-et".exec' --raw)
-wps_wpp_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.xdg.desktopEntries."wps-office-wpp".exec' --raw)
+wps_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.local.wps.desktopEntries."wps-office-prometheus".exec' --raw)
+wpspdf_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.local.wps.desktopEntries."wps-office-pdf".exec' --raw)
+wps_writer_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.local.wps.desktopEntries."wps-office-wps".exec' --raw)
+wps_et_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.local.wps.desktopEntries."wps-office-et".exec' --raw)
+wps_wpp_desktop=$(cd "$repo_root" && nix --extra-experimental-features 'nix-command flakes dynamic-derivations' eval '.#homeConfigurations.mingshi.config.local.wps.desktopEntries."wps-office-wpp".exec' --raw)
 
 assert_contains() {
   local text=$1

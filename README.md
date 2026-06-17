@@ -95,10 +95,18 @@ and KDE cache refresh hooks. The active modules refresh the desktop database and
 service cache on activation, so normal changes should only require `hms`.
 
 Bitwarden auto-type is managed in `modules/bitwarden-autotype.nix`. It installs
-`rbw`, plain `rofi-rbw`, `fuzzel`, `wl-clipboard`, `ydotool`, and `pinentry-qt`;
+`rbw`, plain `rofi-rbw`, `fuzzel`, `wl-clipboard`, `xdotool`, `ydotool`, and `pinentry-qt`;
 plain `rofi-rbw` is intentional because the Wayland wrapper forces `wtype` while
 this desktop uses `ydotool` for KDE Wayland typing. The `rbw` config is a normal
-repo file at `config/rbw/config.json` deployed by Home Manager.
+repo file at `config/rbw/config.json` deployed by Home Manager. The KDE global
+shortcut `Ctrl+Alt+B` is bound to the generated `rofi-rbw-autotype.desktop`
+launcher during activation and opens a small action menu: normal login,
+same-page TOTP login, copy-only TOTP, type-only TOTP, and X11 fallback. Per-account
+input order belongs in the Bitwarden item itself via a custom `_autotype` field;
+for example, set `_autotype` to `username:tab:password:tab:totp` when that account
+uses a one-page TOTP form. Direct shortcuts still exist for common fallback paths:
+`Ctrl+Alt+O` runs the same-page TOTP sequence and `Ctrl+Alt+Shift+B` forces
+`xdotool` for XWayland/X11 windows.
 
 WPS Office is managed in `modules/wps.nix` because it needs multiple wrapper-backed
 desktop entries. Most other GUI apps should stay in the shared `nixgl-apps.nix`

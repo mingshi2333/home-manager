@@ -27,8 +27,9 @@ eval_json() {
 download_dir=$(eval_raw 'xdg.userDirs.download')
 expected_working_dir="${download_dir}/nix"
 nixgl_entries_json=$(eval_json 'local.nixgl.desktopEntries')
-codex_exec=$(eval_raw 'xdg.desktopEntries."codex-desktop".exec')
-wps_writer_path=$(eval_raw 'xdg.desktopEntries."wps-office-wps".settings.Path')
+codex_exec=$(eval_raw 'local.nixgl.desktopEntries."codex-desktop".exec')
+claude_exec=$(eval_raw 'local.nixgl.desktopEntries."claude-desktop".exec')
+wps_writer_path=$(eval_raw 'local.wps.desktopEntries."wps-office-wps".settings.Path')
 
 if ! jq -e --arg path "$expected_working_dir" \
   'to_entries | all(.value.settings.Path == $path)' \
@@ -39,6 +40,11 @@ fi
 
 if [[ "$codex_exec" != *' %u' ]]; then
   echo 'expected Codex desktop entry to preserve URL callback argument' >&2
+  exit 1
+fi
+
+if [[ "$claude_exec" != *' %u' ]]; then
+  echo 'expected Claude desktop entry to preserve URL callback argument' >&2
   exit 1
 fi
 

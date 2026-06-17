@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   wpsPackage = pkgs.wpsoffice-cn;
@@ -54,33 +59,24 @@ let
       };
     }
     // pkgs.lib.optionalAttrs (mimeType != null) { inherit mimeType; };
-in
-{
-  home.packages = [ wpsPackage ];
 
-  home.file = {
-    ".local/bin/wps" = {
-      text = mkWrapper "wps";
-      executable = true;
+  mkDesktopItemPackage = desktopId: entry:
+    pkgs.makeDesktopItem {
+      name = desktopId;
+      desktopName = entry.name;
+      genericName = entry.genericName or null;
+      comment = entry.comment or null;
+      icon = entry.icon or null;
+      type = entry.type or "Application";
+      exec = entry.exec or null;
+      terminal = entry.terminal or false;
+      mimeTypes = entry.mimeType or [ ];
+      categories = entry.categories or [ ];
+      startupNotify = entry.startupNotify or null;
+      extraConfig = entry.settings or { };
     };
 
-    ".local/bin/wpspdf" = {
-      text = mkWrapper "wpspdf";
-      executable = true;
-    };
-
-    ".local/bin/et" = {
-      text = mkWrapper "et";
-      executable = true;
-    };
-
-    ".local/bin/wpp" = {
-      text = mkWrapper "wpp";
-      executable = true;
-    };
-  };
-
-  xdg.desktopEntries = {
+  wpsDesktopEntries = {
     "wps-office-prometheus" = mkEntry {
       name = "WPS Office";
       genericName = "WPS Office";
@@ -197,6 +193,42 @@ in
       icon = "wps-office2023-pdfmain";
       startupWMClass = "wpspdf";
       mimeType = [ "application/pdf" ];
+    };
+  };
+in
+{
+  options.local.wps.desktopEntries = lib.mkOption {
+    type = lib.types.attrsOf lib.types.anything;
+    readOnly = true;
+  };
+
+  config = {
+    local.wps.desktopEntries = wpsDesktopEntries;
+
+    home.packages = [ wpsPackage ] ++ map lib.hiPrio (
+      lib.mapAttrsToList mkDesktopItemPackage wpsDesktopEntries
+    );
+
+    home.file = {
+      ".local/bin/wps" = {
+        text = mkWrapper "wps";
+        executable = true;
+      };
+
+      ".local/bin/wpspdf" = {
+        text = mkWrapper "wpspdf";
+        executable = true;
+      };
+
+      ".local/bin/et" = {
+        text = mkWrapper "et";
+        executable = true;
+      };
+
+      ".local/bin/wpp" = {
+        text = mkWrapper "wpp";
+        executable = true;
+      };
     };
   };
 }

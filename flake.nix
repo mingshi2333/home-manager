@@ -45,9 +45,11 @@
 
       pkgs = import nixpkgs {
         inherit system;
-        # Claude Desktop ships under an unfree license; allow just that package
-        # (we build it locally from a patched aaddrick source in nixgl-apps.nix).
-        config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "claude-desktop" ];
+        # Unfree packages (claude-desktop, spotify, wpsoffice-cn, karing) are
+        # gated by home.nix's `nixpkgs.config.allowUnfree = true`, which is what
+        # home-manager actually applies. A predicate on THIS pkgs set would be
+        # dead: home-manager re-imports nixpkgs with the module's nixpkgs.config
+        # and only takes pkgs.path/overlays/system from here.
         overlays = [
           # gearlever pulls dwarfs transitively (currently 0.14.0); its default
           # build fails against boost 1.89 (missing boost_system), so pin dwarfs'

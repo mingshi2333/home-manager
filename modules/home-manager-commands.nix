@@ -36,7 +36,10 @@ let
         }
 
         update_input_if_changed codex-desktop-linux github:ilysenko/codex-desktop-linux
-        update_input_if_changed claude-desktop-debian github:aaddrick/claude-desktop-debian
+        # claude-desktop-debian is deliberately rev-pinned in flake.nix (local
+        # patches target that exact tree), so hms must NOT auto-bump it. Update it
+        # manually via `nix flake update claude-desktop-debian` when refreshing the
+        # patches.
         exec ${refreshScript}
       '';
       executable = true;

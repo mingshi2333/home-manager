@@ -51,6 +51,17 @@ assert_script_contains() {
   fi
 }
 
+assert_script_not_contains() {
+  local script_text=$1
+  local pattern=$2
+  local message=$3
+
+  if printf '%s\n' "$script_text" | grep -Eq "$pattern"; then
+    echo "$message" >&2
+    exit 1
+  fi
+}
+
 assert_alias_matches \
   "$hms_alias" \
   "^alias hms='~/.local/bin/hms'$" \
@@ -127,10 +138,10 @@ assert_script_contains \
   '^update_input_if_changed codex-desktop-linux github:ilysenko/codex-desktop-linux$' \
   'expected hms wrapper script to update Codex Desktop when needed'
 
-assert_script_contains \
+assert_script_not_contains \
   "$hms_script_text" \
-  '^update_input_if_changed claude-desktop-debian github:aaddrick/claude-desktop-debian$' \
-  'expected hms wrapper script to update Claude Desktop when needed'
+  'update_input_if_changed claude-desktop-debian' \
+  'hms must NOT auto-bump the deliberately rev-pinned claude-desktop-debian input'
 
 assert_script_contains \
   "$hmu_script_text" \

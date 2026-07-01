@@ -75,10 +75,13 @@ Put custom package expressions under `packages/` and keep their source metadata 
 ## Bitwarden Auto-Type
 
 Home Manager installs the KDE Wayland path through `rbw`, plain `rofi-rbw`,
-`fuzzel`, `wl-clipboard`, `xdotool`, `ydotool`, and `pinentry-qt`. It also owns both
-`~/.config/rofi-rbw.rc` and `~/.config/rbw/config.json`.
+`fuzzel`, `wl-clipboard`, `xdotool`, `ydotool`, and `pinentry-qt`. It owns
+`~/.config/rofi-rbw.rc`, and it owns only the *symlink*
+`~/.config/rbw/config.json` -> `~/.secrets/rbw-config.json` (out-of-store) — never
+the config contents.
 
-Declare the account in `config/rbw/config.json`:
+Create the real config at `~/.secrets/rbw-config.json` (never inside the repo, so
+your email and self-hosted server URL stay unpublished):
 
 ```json
 {

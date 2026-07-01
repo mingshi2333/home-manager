@@ -97,8 +97,11 @@ service cache on activation, so normal changes should only require `hms`.
 Bitwarden auto-type is managed in `modules/bitwarden-autotype.nix`. It installs
 `rbw`, plain `rofi-rbw`, `fuzzel`, `wl-clipboard`, `xdotool`, `ydotool`, and `pinentry-qt`;
 plain `rofi-rbw` is intentional because the Wayland wrapper forces `wtype` while
-this desktop uses `ydotool` for KDE Wayland typing. The `rbw` config is a normal
-repo file at `config/rbw/config.json` deployed by Home Manager. The KDE global
+this desktop uses `ydotool` for KDE Wayland typing. The `rbw` config lives OUT of
+the repo and the Nix store: Home Manager creates an out-of-store symlink
+`~/.config/rbw/config.json` -> `~/.secrets/rbw-config.json`, so your account email
+and self-hosted server URL are never published. Create that file yourself (see
+USAGE.md). The KDE global
 shortcut `Ctrl+Alt+B` is bound to the generated `rofi-rbw-autotype.desktop`
 launcher during activation and opens a small action menu: normal login,
 same-page TOTP login, copy-only TOTP, type-only TOTP, and X11 fallback. Per-account

@@ -26,7 +26,6 @@ eval_json() {
 
 packages_json=$(eval_json 'home.packages')
 rofi_rbw_config=$(eval_raw 'xdg.configFile."rofi-rbw.rc".text')
-rbw_config=$(jq -c . "$repo_root/config/rbw/config.json")
 rbw_config_force=$(eval_json 'xdg.configFile."rbw/config.json".force')
 ydotool_exec_json=$(eval_json 'systemd.user.services.ydotool.Service.ExecStart')
 shortcut_activation=$(eval_raw 'home.activation.configureRofiRbwShortcut.data')
@@ -163,19 +162,17 @@ if [[ "$rbw_config_force" != "true" ]]; then
   exit 1
 fi
 
-if ! rg -n 'source = \.\./config/rbw/config\.json;' "$repo_root/modules/bitwarden-autotype.nix" >/dev/null; then
-  echo "expected rbw/config.json to be deployed from config/rbw/config.json" >&2
+# The rbw config holds the account email and self-hosted server URL, so it must
+# stay OUT of the repo and the Nix store: an out-of-store symlink to
+# ~/.secrets/rbw-config.json, never an in-repo file.
+if ! rg -n 'mkOutOfStoreSymlink "\$\{config\.home\.homeDirectory\}/\.secrets/rbw-config\.json"' \
+  "$repo_root/modules/bitwarden-autotype.nix" >/dev/null; then
+  echo "expected rbw/config.json to be an out-of-store symlink to ~/.secrets/rbw-config.json" >&2
   exit 1
 fi
 
-if ! jq -e '
-  (.email == null or (.email | type == "string"))
-  and (.base_url == null or (.base_url | type == "string"))
-  and .lock_timeout == 14400
-  and .sync_interval == 3600
-  and .pinentry == "pinentry-qt"
-' <<<"$rbw_config" >/dev/null; then
-  echo "expected config/rbw/config.json to define rbw desktop defaults" >&2
+if [ -e "$repo_root/config/rbw" ]; then
+  echo "config/rbw must not exist in the repo: rbw secrets live at ~/.secrets/rbw-config.json" >&2
   exit 1
 fi
 

@@ -622,23 +622,6 @@ let
 
   apps = {
 
-    # telegram = mkNixGLApp {
-    #   pkg = pkgs.telegram-desktop;
-    #   name = "telegram-desktop";
-    #   binary = "Telegram";
-    #   extraEnv = {
-    #     QT_QPA_PLATFORM = "wayland";
-    #     QTWEBENGINE_DISABLE_SANDBOX = "1";
-    #   };
-    #   aliases = [ "Telegram" "telegram" ];
-    #   desktopName = "Telegram Desktop";
-    #   comment = "Telegram Desktop (nixGL)";
-    #   categories = [ "Network" "InstantMessaging" ];
-    #   icon = "telegram";
-    #   mimeTypes = [ "x-scheme-handler/tg" ];
-    #   dbusService = "org.telegram.desktop.service";
-    # };
-
     gearlever = standardApp {
       pkg = pkgs.gearlever;
       gtkRenderer = "gl";
@@ -962,41 +945,6 @@ let
         icon = "computer";
       };
     };
-
-    # readest = mkNixGLApp {
-    #   pkg = pkgs.readest;
-    #   name = "readest";
-    #   platform = "wayland";
-    #   desktopName = "Readest (nixGL)";
-    #   comment = "Modern ebook reader supporting EPUB, PDF, MOBI and more (nixGL)";
-    #   categories = [
-    #     "Office"
-    #     "Viewer"
-    #   ];
-    #   icon = "readest";
-    #   mimeTypes = [
-    #     # EPUB formats
-    #     "application/epub+zip"
-    #     # PDF
-    #     "application/pdf"
-    #     # MOBI and AZW formats
-    #     "application/x-mobipocket-ebook"
-    #     "application/vnd.amazon.ebook"
-    #     "application/vnd.amazon.mobi8-ebook"
-    #     # Comic book formats
-    #     "application/x-cbz"
-    #     "application/x-cbr"
-    #     "application/x-cb7"
-    #     "application/x-cbt"
-    #     # Fiction Book
-    #     "application/x-fictionbook+xml"
-    #     "application/x-zip-compressed-fb2"
-    #     # Other ebook formats
-    #     "application/x-sony-bbeb"
-    #     "text/plain"
-    #   ];
-    #   execArgs = "%U";
-    # };
   };
 
 in

@@ -82,47 +82,67 @@ EOF
 }
 
 update_nvidia_metadata() {
-  if [ -r /proc/driver/nvidia/version ]; then
-    local current_version=""
-    # shellcheck disable=SC2016
-    current_version="$($awk_bin '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' /proc/driver/nvidia/version)"
-    local stored_version=""
-    if [ -f nvidia/version ]; then
-      # shellcheck disable=SC2016
-      stored_version="$($awk_bin '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' nvidia/version)"
-    fi
-
-    local version_updated=0
-    local normalized_version=""
-    normalized_version="$(mktemp)"
-    "$awk_bin" '{ sub(/[[:space:]]+$/, ""); print }' /proc/driver/nvidia/version > "$normalized_version"
-
-    if [ ! -f nvidia/version ] || ! cmp -s "$normalized_version" nvidia/version; then
-      mv "$normalized_version" nvidia/version
-      normalized_version=""
-      version_updated=1
-      echo "[hms] nvidia/version updated"
-    fi
-    if [ -n "$normalized_version" ]; then
-      rm -f "$normalized_version"
-    fi
-
-    if [ "$version_updated" -eq 1 ] || [ ! -s nvidia/hash ] || ! "$grep_bin" -Eq '^sha256-[A-Za-z0-9+/=]+$' nvidia/hash; then
-      if [ -z "$current_version" ]; then
-        echo "[hms] unable to parse NVIDIA version for hash update" >&2
-        exit 1
-      fi
-      local nvidia_url="https://download.nvidia.com/XFree86/Linux-x86_64/$current_version/NVIDIA-Linux-x86_64-$current_version.run"
-      local nvidia_hash=""
-      nvidia_hash="$("$nix_bin" hash to-sri --type sha256 "$("$nix_prefetch_url_bin" "$nvidia_url")")"
-      printf '%s\n' "$nvidia_hash" > nvidia/hash
-      if [ "$current_version" != "$stored_version" ]; then
-        echo "[hms] nvidia/hash updated for $current_version"
-      else
-        echo "[hms] nvidia/hash refreshed"
-      fi
-    fi
+  if [ ! -r /proc/driver/nvidia/version ]; then
+    return 0
   fi
+
+  local current_version=""
+  # shellcheck disable=SC2016
+  current_version="$($awk_bin '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' /proc/driver/nvidia/version)"
+
+  # Normalized /proc content (trailing whitespace stripped) for a stable compare.
+  local normalized_version=""
+  normalized_version="$(mktemp)"
+  "$awk_bin" '{ sub(/[[:space:]]+$/, ""); print }' /proc/driver/nvidia/version > "$normalized_version"
+
+  # Which version was the stored hash computed for? Lets a partial write self-heal:
+  # if version advanced but the hash did not, hash_version != current_version and
+  # we re-fetch instead of wedging the build on a stale-but-format-valid hash.
+  local hash_version=""
+  if [ -f nvidia/hash-version ]; then
+    IFS= read -r hash_version < nvidia/hash-version || true
+  fi
+
+  # Decide whether a hash refresh is needed WITHOUT mutating any file yet. This
+  # preserves the skip-when-unchanged gate (nix-prefetch-url downloads the ~300MB
+  # .run, so we only do it when something actually changed).
+  local needs_hash_update=0
+  if [ ! -f nvidia/version ] || ! cmp -s "$normalized_version" nvidia/version; then
+    needs_hash_update=1 # driver version changed
+  elif [ ! -s nvidia/hash ] || ! "$grep_bin" -Eq '^sha256-[A-Za-z0-9+/=]+$' nvidia/hash; then
+    needs_hash_update=1 # hash missing or corrupt
+  elif [ "$hash_version" != "$current_version" ]; then
+    needs_hash_update=1 # stored hash does not correspond to the current version
+  fi
+
+  if [ "$needs_hash_update" -eq 0 ]; then
+    rm -f "$normalized_version"
+    return 0
+  fi
+
+  if [ -z "$current_version" ]; then
+    rm -f "$normalized_version"
+    echo "[hms] unable to parse NVIDIA version for hash update" >&2
+    exit 1
+  fi
+
+  # Prefetch + validate the hash BEFORE committing nvidia/version. A failed
+  # prefetch aborts here (set -e) with all three files still at their old,
+  # mutually-consistent values, instead of leaving version ahead of hash.
+  local nvidia_url="https://download.nvidia.com/XFree86/Linux-x86_64/$current_version/NVIDIA-Linux-x86_64-$current_version.run"
+  local nvidia_hash=""
+  nvidia_hash="$("$nix_bin" hash to-sri --type sha256 "$("$nix_prefetch_url_bin" "$nvidia_url")")"
+  if ! printf '%s\n' "$nvidia_hash" | "$grep_bin" -Eq '^sha256-[A-Za-z0-9+/=]+$'; then
+    rm -f "$normalized_version"
+    echo "[hms] invalid NVIDIA source hash for $current_version: ${nvidia_hash:-empty}" >&2
+    exit 1
+  fi
+
+  # Commit all three together: hash + its version sidecar first, then version.
+  printf '%s\n' "$nvidia_hash" > nvidia/hash
+  printf '%s\n' "$current_version" > nvidia/hash-version
+  mv "$normalized_version" nvidia/version
+  echo "[hms] nvidia metadata updated for $current_version"
 }
 
 export NIX_SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem

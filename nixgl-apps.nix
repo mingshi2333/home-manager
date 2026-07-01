@@ -634,8 +634,10 @@ let
       pkg = pkgs.gearlever;
       gtkRenderer = "gl";
       compatibility = {
-        health = "suspected";
-        notes = [ "GTK renderer override remains host-specific until runtime validation." ];
+        health = "healthy";
+        notes = [
+          "GTK renderer override (gtkRenderer = gl) runtime-validated 2026-07-01: launch + 15s survival, no coredump."
+        ];
       };
       desktopName = "Gear Lever (nixGL)";
       comment = "Manage AppImages with Gear Lever (wrapped by nixGL)";
@@ -673,10 +675,10 @@ let
       # skips the probe (same as gearlever).
       gtkRenderer = "gl";
       compatibility = {
-        health = "suspected";
+        health = "healthy";
         notes = [
           "Pinned to XWayland until a native Wayland stance is proven."
-          "GTK4 GSK Vulkan probe crashed in the NVIDIA Vulkan ICD on startup; disabled via gtkRenderer = \"gl\"."
+          "GTK4 GSK Vulkan probe crashed in the NVIDIA Vulkan ICD on startup; disabled via gtkRenderer = \"gl\". Runtime-validated 2026-07-01: launch + 15s survival, no coredump."
         ];
       };
       desktopName = "cozy (nixGL)";
@@ -757,9 +759,9 @@ let
       # QVulkanInstance::create() fails gracefully. OpenGL (GLX/EGL) unaffected.
       disableVulkan = true;
       compatibility = {
-        health = "suspected";
+        health = "healthy";
         notes = [
-          "Qt6 + QtWebEngine flashcard app wrapped with nixGL on Fedora KDE Wayland; pinned to XWayland (xcb) like the other Qt desktop apps. Disables Vulkan ICD discovery via VK_DRIVER_FILES after QtWebEngine's RhiGpuInfo vendor probe crashed in the NVIDIA Vulkan ICD on startup."
+          "Qt6 + QtWebEngine flashcard app wrapped with nixGL on Fedora KDE Wayland; pinned to XWayland (xcb) like the other Qt desktop apps. Disables Vulkan ICD discovery via VK_DRIVER_FILES after QtWebEngine's RhiGpuInfo vendor probe crashed in the NVIDIA Vulkan ICD on startup. Runtime-validated 2026-07-01: launch + 15s survival, no coredump."
         ];
       };
       desktopName = "Anki (nixGL)";
@@ -819,9 +821,9 @@ let
       # choice, kept explicit rather than folded into disableChromiumVulkan).
       extraFlags = [ "--use-gl=desktop" ];
       compatibility = {
-        health = "suspected";
+        health = "healthy";
         notes = [
-          "Pinned to XWayland and disables Chromium Vulkan probing after GPU child processes crashed in the NVIDIA Vulkan ICD."
+          "Pinned to XWayland and disables Chromium Vulkan probing after GPU child processes crashed in the NVIDIA Vulkan ICD. Runtime-validated 2026-07-01: launch + 15s survival, no coredump."
         ];
       };
       desktopName = "TradingView (nixGL)";
@@ -847,10 +849,10 @@ let
         CODEX_CLI_PATH = "${pkgs.codex}/bin/codex";
       };
       compatibility = {
-        health = "unknown";
+        health = "healthy";
         notes = [
           "Wrapped with nixGL on Fedora KDE Wayland; upstream launcher supports XWayland-first startup and codex:// callbacks."
-          "Preemptively disables Vulkan (VK_DRIVER_FILES + Chromium --disable-vulkan) to avoid the NVIDIA Vulkan-ICD GPU-process SIGSEGV that hit tradingview."
+          "Preemptively disables Vulkan (VK_DRIVER_FILES + Chromium --disable-vulkan) to avoid the NVIDIA Vulkan-ICD GPU-process SIGSEGV that hit tradingview. Runtime-validated 2026-07-01: launch + 15s survival, no coredump."
         ];
       };
       desktopName = "Codex Desktop (nixGL)";
@@ -877,10 +879,10 @@ let
       disableVulkan = true;
       disableChromiumVulkan = true;
       compatibility = {
-        health = "unknown";
+        health = "healthy";
         notes = [
           "Wrapped with nixGL on Fedora KDE Wayland; uses the aaddrick Claude Desktop Debian flake FHS package so MCP servers have a conventional runtime environment."
-          "Preemptively disables Vulkan (VK_DRIVER_FILES + Chromium --disable-vulkan) to avoid the NVIDIA Vulkan-ICD GPU-process SIGSEGV that hit tradingview."
+          "Preemptively disables Vulkan (VK_DRIVER_FILES + Chromium --disable-vulkan) to avoid the NVIDIA Vulkan-ICD GPU-process SIGSEGV that hit tradingview. Runtime-validated 2026-07-01: launch + 15s survival, no coredump; graceful SIGTERM exits cleanly."
         ];
       };
       desktopName = "Claude Desktop (nixGL)";

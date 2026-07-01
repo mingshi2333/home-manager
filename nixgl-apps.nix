@@ -384,10 +384,54 @@ let
       desktopName ? "${name} (nixGL)",
       comment ? desktopName,
       icon ? name,
+      # Sugar flags — centralize the host-specific NVIDIA/XWayland workarounds so
+      # each affected app opts in with one line instead of hand-copying env + flags
+      # (which silently drift across the catalog). All resolve into
+      # platform/extraEnv/extraFlags below and are stripped before reaching the
+      # closed-pattern mkNixGLApp.
+      repairProfile ? null, # reuse an electronRepairProfiles entry, e.g. "xwayland-safe"
+      disableVulkan ? false, # defeat nixGL's prepended NVIDIA Vulkan ICD via VK_DRIVER_FILES
+      disableChromiumVulkan ? false, # stop Chromium/Electron's ANGLE-Vulkan GPU probe
+      gtkRenderer ? null, # force a GTK4 GSK renderer + skip its Vulkan probe, e.g. "gl"
       ...
     }@args:
+    let
+      profile =
+        if repairProfile == null then
+          { }
+        else
+          electronRepairProfiles.${repairProfile}
+            or (throw "Unknown Electron repair profile '${repairProfile}' for ${name}");
+      # Host-wide NVIDIA Vulkan-ICD crash mitigation (see MEMORY / cozy + anki).
+      # Filenames key off `name`, matching the hand-written entries byte-for-byte.
+      vulkanEnv = pkgs.lib.optionalAttrs disableVulkan {
+        VK_DRIVER_FILES = "/run/nonexistent/${name}-disable-vulkan-driver.json";
+        VK_ICD_FILENAMES = "/run/nonexistent/${name}-disable-vulkan-icd.json";
+      };
+      gtkEnv = pkgs.lib.optionalAttrs (gtkRenderer != null) {
+        GDK_DISABLE = "vulkan";
+        GSK_RENDERER = gtkRenderer;
+      };
+      chromiumVulkanFlags = pkgs.lib.optionals disableChromiumVulkan [
+        "--disable-vulkan"
+        "--disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan"
+      ];
+      # App-supplied platform/extraEnv/extraFlags win over the profile/synthesized ones.
+      mergedPlatform = args.platform or profile.platform or "xcb";
+      mergedEnv = (profile.extraEnv or { }) // vulkanEnv // gtkEnv // (args.extraEnv or { });
+      mergedFlags = (profile.extraFlags or [ ]) ++ chromiumVulkanFlags ++ (args.extraFlags or [ ]);
+    in
     mkCatalogNixGLApp catalogId (
-      builtins.removeAttrs args [ "enable" ]
+      builtins.removeAttrs args [
+        "enable"
+        "repairProfile"
+        "disableVulkan"
+        "disableChromiumVulkan"
+        "gtkRenderer"
+        "platform"
+        "extraEnv"
+        "extraFlags"
+      ]
       // {
         inherit
           enable
@@ -397,6 +441,9 @@ let
           comment
           icon
           ;
+        platform = mergedPlatform;
+        extraEnv = mergedEnv;
+        extraFlags = mergedFlags;
       }
     );
 
@@ -594,10 +641,7 @@ let
 
     gearlever = standardApp {
       pkg = pkgs.gearlever;
-      extraEnv = {
-        GDK_DISABLE = "vulkan";
-        GSK_RENDERER = "gl";
-      };
+      gtkRenderer = "gl";
       compatibility = {
         health = "suspected";
         notes = [ "GTK renderer override remains host-specific until runtime validation." ];
@@ -633,9 +677,16 @@ let
     cozy = standardApp {
       pkg = pkgs.cozy;
       platform = "x11";
+      # GTK4's GSK renderer probes Vulkan on window realize and SIGSEGVs in the
+      # NVIDIA Vulkan ICD on this host; gtkRenderer forces the GL renderer and
+      # skips the probe (same as gearlever).
+      gtkRenderer = "gl";
       compatibility = {
-        health = "unknown";
-        notes = [ "Pinned to XWayland until a native Wayland stance is proven." ];
+        health = "suspected";
+        notes = [
+          "Pinned to XWayland until a native Wayland stance is proven."
+          "GTK4 GSK Vulkan probe crashed in the NVIDIA Vulkan ICD on startup; disabled via gtkRenderer = \"gl\"."
+        ];
       };
       desktopName = "cozy (nixGL)";
       comment = "cozy (nixGL)";
@@ -709,21 +760,11 @@ let
     anki = standardApp {
       pkg = pkgs.anki;
       platform = "xcb";
-      extraEnv = {
-        # QtWebEngine's RhiGpuInfo probes the GPU vendor at QWebEngineProfile
-        # construction by spinning up a Qt Vulkan instance. Under nixGL that
-        # dlopens the NVIDIA Vulkan ICD (libGLX_nvidia -> libnvidia-glcore),
-        # which segfaults in its constructor and kills Anki on startup. nixGL
-        # unconditionally prepends its own nvidia_icd.json onto VK_ICD_FILENAMES,
-        # so overriding that var alone cannot disable it; VK_DRIVER_FILES is the
-        # newer loader variable that overrides and disables VK_ICD_FILENAMES, so
-        # pointing it at a non-existent manifest makes the loader find no Vulkan
-        # driver and QVulkanInstance::create() fail gracefully. Anki renders via
-        # OpenGL (GLX/EGL), so disabling Vulkan probing costs nothing here. Same
-        # workaround as the tradingview entry.
-        VK_DRIVER_FILES = "/run/nonexistent/anki-disable-vulkan-driver.json";
-        VK_ICD_FILENAMES = "/run/nonexistent/anki-disable-vulkan-icd.json";
-      };
+      # QtWebEngine's RhiGpuInfo GPU-vendor probe spins up a Qt Vulkan instance
+      # that dlopens the NVIDIA Vulkan ICD and SIGSEGVs in its constructor;
+      # disableVulkan points the loader at a nonexistent manifest so
+      # QVulkanInstance::create() fails gracefully. OpenGL (GLX/EGL) unaffected.
+      disableVulkan = true;
       compatibility = {
         health = "suspected";
         notes = [
@@ -780,19 +821,12 @@ let
 
     tradingview = standardApp {
       pkg = pkgs.tradingview;
-      platform = "x11";
-      extraEnv = {
-        ELECTRON_OZONE_PLATFORM_HINT = "x11";
-        NIXOS_OZONE_WL = "0";
-        VK_DRIVER_FILES = "/run/nonexistent/tradingview-disable-vulkan-driver.json";
-        VK_ICD_FILENAMES = "/run/nonexistent/tradingview-disable-vulkan-icd.json";
-      };
-      extraFlags = [
-        "--ozone-platform=x11"
-        "--disable-vulkan"
-        "--disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan"
-        "--use-gl=desktop"
-      ];
+      repairProfile = "xwayland-safe";
+      disableVulkan = true;
+      disableChromiumVulkan = true;
+      # --use-gl=desktop forces native GL instead of ANGLE (a real rendering-path
+      # choice, kept explicit rather than folded into disableChromiumVulkan).
+      extraFlags = [ "--use-gl=desktop" ];
       compatibility = {
         health = "suspected";
         notes = [
@@ -814,15 +848,10 @@ let
       pkg = codexDesktopPkg;
       name = "codex-desktop";
       binary = "codex-desktop";
-      platform = "x11";
+      repairProfile = "xwayland-safe";
       extraEnv = {
         CODEX_CLI_PATH = "${pkgs.codex}/bin/codex";
-        ELECTRON_OZONE_PLATFORM_HINT = "x11";
-        NIXOS_OZONE_WL = "0";
       };
-      extraFlags = [
-        "--ozone-platform=x11"
-      ];
       compatibility = {
         health = "unknown";
         notes = [
@@ -846,14 +875,7 @@ let
       pkg = claudeDesktopPkg;
       name = "claude-desktop";
       binary = "claude-desktop";
-      platform = "x11";
-      extraEnv = {
-        ELECTRON_OZONE_PLATFORM_HINT = "x11";
-        NIXOS_OZONE_WL = "0";
-      };
-      extraFlags = [
-        "--ozone-platform=x11"
-      ];
+      repairProfile = "xwayland-safe";
       compatibility = {
         health = "unknown";
         notes = [

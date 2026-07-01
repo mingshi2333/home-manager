@@ -706,6 +706,45 @@ let
       icon = "zotero";
     };
 
+    anki = standardApp {
+      pkg = pkgs.anki;
+      platform = "xcb";
+      extraEnv = {
+        # QtWebEngine's RhiGpuInfo probes the GPU vendor at QWebEngineProfile
+        # construction by spinning up a Qt Vulkan instance. Under nixGL that
+        # dlopens the NVIDIA Vulkan ICD (libGLX_nvidia -> libnvidia-glcore),
+        # which segfaults in its constructor and kills Anki on startup. nixGL
+        # unconditionally prepends its own nvidia_icd.json onto VK_ICD_FILENAMES,
+        # so overriding that var alone cannot disable it; VK_DRIVER_FILES is the
+        # newer loader variable that overrides and disables VK_ICD_FILENAMES, so
+        # pointing it at a non-existent manifest makes the loader find no Vulkan
+        # driver and QVulkanInstance::create() fail gracefully. Anki renders via
+        # OpenGL (GLX/EGL), so disabling Vulkan probing costs nothing here. Same
+        # workaround as the tradingview entry.
+        VK_DRIVER_FILES = "/run/nonexistent/anki-disable-vulkan-driver.json";
+        VK_ICD_FILENAMES = "/run/nonexistent/anki-disable-vulkan-icd.json";
+      };
+      compatibility = {
+        health = "suspected";
+        notes = [
+          "Qt6 + QtWebEngine flashcard app wrapped with nixGL on Fedora KDE Wayland; pinned to XWayland (xcb) like the other Qt desktop apps. Disables Vulkan ICD discovery via VK_DRIVER_FILES after QtWebEngine's RhiGpuInfo vendor probe crashed in the NVIDIA Vulkan ICD on startup."
+        ];
+      };
+      desktopName = "Anki (nixGL)";
+      comment = "Spaced-repetition flashcards (nixGL)";
+      categories = [
+        "Education"
+        "Languages"
+      ];
+      icon = "anki";
+      mimeTypes = [
+        "application/x-apkg"
+        "application/x-colpkg"
+        "application/x-ankiaddon"
+      ];
+      execArgs = "%f";
+    };
+
     tracy = standardApp {
       pkg = pkgs.tracy;
       platform = "x11";

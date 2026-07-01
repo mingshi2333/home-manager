@@ -849,6 +849,9 @@ let
       name = "codex-desktop";
       binary = "codex-desktop";
       repairProfile = "xwayland-safe";
+      # Preemptive guard for the same NVIDIA Vulkan-ICD crash class as tradingview.
+      disableVulkan = true;
+      disableChromiumVulkan = true;
       extraEnv = {
         CODEX_CLI_PATH = "${pkgs.codex}/bin/codex";
       };
@@ -856,6 +859,7 @@ let
         health = "unknown";
         notes = [
           "Wrapped with nixGL on Fedora KDE Wayland; upstream launcher supports XWayland-first startup and codex:// callbacks."
+          "Preemptively disables Vulkan (VK_DRIVER_FILES + Chromium --disable-vulkan) to avoid the NVIDIA Vulkan-ICD GPU-process SIGSEGV that hit tradingview."
         ];
       };
       desktopName = "Codex Desktop (nixGL)";
@@ -876,10 +880,16 @@ let
       name = "claude-desktop";
       binary = "claude-desktop";
       repairProfile = "xwayland-safe";
+      # Preemptive guard for the same NVIDIA Vulkan-ICD crash class as tradingview
+      # (Electron GPU child probing Vulkan). Zero-cost for GL-rendered Electron;
+      # the env is inherited by the Chromium subprocess and the bwrap sandbox.
+      disableVulkan = true;
+      disableChromiumVulkan = true;
       compatibility = {
         health = "unknown";
         notes = [
           "Wrapped with nixGL on Fedora KDE Wayland; uses the aaddrick Claude Desktop Debian flake FHS package so MCP servers have a conventional runtime environment."
+          "Preemptively disables Vulkan (VK_DRIVER_FILES + Chromium --disable-vulkan) to avoid the NVIDIA Vulkan-ICD GPU-process SIGSEGV that hit tradingview."
         ];
       };
       desktopName = "Claude Desktop (nixGL)";

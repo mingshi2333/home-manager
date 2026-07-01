@@ -11,16 +11,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # nixGL for OpenGL/Vulkan on non-NixOS
-    nixgl = {
-      url = "github:nix-community/nixGL";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Note: nixGL is vendored locally (nixgl-noimpure.nix) so the upstream
+    # flake input is intentionally NOT declared here.
 
     codex-desktop-linux = {
       url = "github:ilysenko/codex-desktop-linux";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "nixgl/flake-utils";
     };
 
     claude-desktop-debian = {
@@ -38,7 +34,6 @@
       self,
       nixpkgs,
       home-manager,
-      nixgl,
       ...
     }:
     let

@@ -82,5 +82,47 @@
           ./hosts/mingshi/home.nix
         ];
       };
+
+      # `nix fmt` and the CI format gate.
+      formatter.${system} = pkgs.nixfmt;
+
+      # `nix flake check` evaluates every output (incl. the full home config, so
+      # eval errors surface) and builds these checks. Only the two pure
+      # ripgrep-based boundary tests are sandbox-safe; the eval/build tests run
+      # via `nix run .#test` (tests/ci.sh) and the live-desktop tests stay manual.
+      checks.${system} = {
+        source-boundaries =
+          pkgs.runCommand "check-source-boundaries" { nativeBuildInputs = [ pkgs.ripgrep ]; }
+            ''
+              cp -r ${self} src && cd src
+              bash tests/source-boundaries.sh
+              touch $out
+            '';
+        karing-boundary =
+          pkgs.runCommand "check-karing-boundary" { nativeBuildInputs = [ pkgs.ripgrep ]; }
+            ''
+              cp -r ${self} src && cd src
+              bash tests/karing-package-boundary.sh
+              touch $out
+            '';
+      };
+
+      devShells.${system}.default = pkgs.mkShell {
+        packages = [
+          pkgs.nixfmt
+          pkgs.shellcheck
+          pkgs.ripgrep
+          pkgs.jq
+        ];
+      };
+
+      # `nix run .#test` — the CI-safe eval/build test tiers (not the live ones).
+      apps.${system}.test = {
+        type = "app";
+        meta.description = "Run the CI-safe test tiers (tests/ci.sh) from the working tree";
+        program = "${pkgs.writeShellScript "hm-ci-tests" ''
+          exec ${pkgs.bash}/bin/bash tests/ci.sh
+        ''}";
+      };
     };
 }

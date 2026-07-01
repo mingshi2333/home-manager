@@ -63,24 +63,32 @@ in `sources/`. For example, Karing is split between `packages/karing.nix` and
 
 ## Validation
 
-Run focused checks before committing:
+One command runs every CI-safe tier (pure boundary tests + eval/build tests):
 
 ```bash
-bash tests/source-boundaries.sh
-bash tests/bitwarden-autotype.sh
-bash tests/karing-package-boundary.sh
-bash tests/wps-wrapper.sh
-bash tests/hms-aliases.sh
-nix build '.#homeConfigurations.mingshi.activationPackage' --no-link
+bash tests/ci.sh        # or: nix run .#test
 ```
 
-For a broader smoke pass:
+The flake also wires real gates (note: no `--no-build`, or the check
+derivations are instantiated but never run):
+
+```bash
+nix flake check         # builds the sandbox-pure boundary checks
+nix fmt                 # nixfmt over the tree (CI gates on the --check form)
+```
+
+For focused runs, the individual scripts still work (`bash tests/<name>.sh`),
+and a broader lint pass is:
 
 ```bash
 bash -n tests/*.sh ops/hms-refresh.sh
-shellcheck tests/*.sh ops/hms-refresh.sh
-nix flake check --no-build --extra-experimental-features 'nix-command flakes'
+shellcheck tests/*.sh ops/hms-refresh.sh   # .shellcheckrc disables SC2016
+nix build '.#homeConfigurations.mingshi.activationPackage' --no-link
 ```
+
+The live-desktop diagnostics (`session-validation.sh`, `session-launch-capture.sh`,
+`karing-runtime-libs.sh`) need a running KDE Wayland session (the last one launches
+the karing GUI); they are intentionally excluded from `tests/ci.sh` and CI.
 
 Validation logs and temporary Home Manager build links should stay outside this
 repository. The helper tests default to the XDG desktop directory under

@@ -1,0 +1,5 @@
+# Repo-wide shellcheck baseline so editor, local runs, and CI agree.
+# Note: `severity=` is a CLI-only option and is silently ignored here, so the
+# intentional `$`-in-single-quotes regex literals in tests/ must be handled by
+# disabling SC2016 (info-level style noise for this repo's assert patterns).
+disable=SC2016

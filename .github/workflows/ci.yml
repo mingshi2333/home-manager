@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  # Fast gates: flake checks (builds the sandbox-pure boundary tests), shell
+  # lint, and formatting. No home config build.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      # Builds checks.x86_64-linux.{source-boundaries,karing-boundary}; do NOT
+      # add --no-build or the check derivations are never actually run.
+      - run: nix flake check
+      - run: bash -n tests/*.sh ops/hms-refresh.sh
+      # .shellcheckrc (disable=SC2016) keeps the default severity green.
+      - run: nix run nixpkgs#shellcheck -- tests/*.sh ops/hms-refresh.sh
+      - run: nix run nixpkgs#nixfmt -- --check $(git ls-files '*.nix')
+
+  # Deep eval gate: force-evaluate the entire home configuration (all modules,
+  # the nixgl-apps catalog, package metadata). A full activationPackage BUILD is
+  # deliberately out of scope — the closure (spotify, wpsoffice-cn, Electron
+  # apps, QtWebEngine) exceeds a hosted runner's disk. Evaluating the drvPath
+  # catches every eval-time error; only the small claude-desktop applyPatches
+  # derivation is realized (import-from-derivation, documented in nixgl-apps.nix).
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix eval --raw .#homeConfigurations.mingshi.activationPackage.drvPath

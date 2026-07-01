@@ -6,6 +6,12 @@
 }:
 
 let
+  # Crash-triage note (2026-07-01): WPS's KCEF helper (libjsapibrowser.so, the
+  # cloud/"qing" panel) SIGABRTs at KDE logout/shutdown while WPS is open — a
+  # std::range_error("wstring_convert::to_bytes") thrown from a noexcept atexit
+  # destructor inside Kingsoft's bundled libkrt.so. Known-harmless exit noise,
+  # internal to the vendor blob; not influenced by env/locale/Qt platform and
+  # not fixable from this module. Re-check when nixpkgs ships > 12.1.2.25882.
   wpsPackage = pkgs.wpsoffice-cn;
   homeDir = config.home.homeDirectory;
   defaultWorkingDirectory = "${config.xdg.userDirs.download or "${homeDir}/Downloads"}/nix";

@@ -49,7 +49,10 @@
         # (we build it locally from a patched aaddrick source in nixgl-apps.nix).
         config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [ "claude-desktop" ];
         overlays = [
-          # Temporary workaround: dwarfs-0.12.4 fails with boost 1.89 (missing boost_system).
+          # gearlever pulls dwarfs transitively (currently 0.14.0); its default
+          # build fails against boost 1.89 (missing boost_system), so pin dwarfs'
+          # boost to 1.87. NOT dead code — dwarfs is in the build closure via
+          # gearlever. Re-test dropping this whenever bumping nixpkgs.
           (final: prev: {
             dwarfs = prev.dwarfs.override {
               boost = prev.boost187;

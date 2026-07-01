@@ -1,5 +1,7 @@
 # Local workflow artifacts
 .planning/
+.research/
+.worktrees/
 docs/superpowers/
 .claude/
 AGENTS.md
@@ -11,3 +13,7 @@ cache.db
 # Generated local links/files
 result
 zsh-extra.sh
+
+# Sentry crash-reporter runtime cache (dropped by Electron apps; may hold
+# live crash dumps — never feed these to tooling)
+.sentry-native/

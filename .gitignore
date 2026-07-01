@@ -5,6 +5,7 @@ zsh-extra.sh
 
 # Local workflow artifacts
 .planning/
+.research/
 docs/superpowers/
 .claude/
 AGENTS.md

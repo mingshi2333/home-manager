@@ -34,6 +34,13 @@ stdenv.mkDerivation rec {
     mkdir -p $out/share/pixmaps
 
     cp -r usr/share/karing/. $out/share/karing/
+    # Upstream RPM ships crashpad_handler mode 0644 (karing/karingService are
+    # 0755). sentry-native posix_spawn()s it on every app start; EACCES trips
+    # Crashpad's FATAL CHECK (spawn_subprocess.cc) and dumped a SIGTRAP core
+    # per launch (21 coredumps May-Jun 2026). Restore the exec bit so the
+    # handler spawns instead of trapping. Deleting it would NOT help — the
+    # spawn would FATAL identically with ENOENT.
+    chmod 755 $out/share/karing/lib/crashpad_handler
     install -m 444 usr/share/applications/karing.desktop $out/share/applications/karing.desktop
     install -m 444 usr/share/pixmaps/karing.png $out/share/pixmaps/karing.png
 

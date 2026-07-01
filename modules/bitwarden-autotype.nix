@@ -103,10 +103,8 @@ let
   '';
 
   rofiRbwDesktopFile = pkgs.writeText "rofi-rbw-autotype.desktop" rofiRbwDesktopEntry;
-  rofiRbwXwaylandDesktopFile =
-    pkgs.writeText "rofi-rbw-autotype-xwayland.desktop" rofiRbwXwaylandDesktopEntry;
-  rofiRbwTotpDesktopFile =
-    pkgs.writeText "rofi-rbw-autotype-totp.desktop" rofiRbwTotpDesktopEntry;
+  rofiRbwXwaylandDesktopFile = pkgs.writeText "rofi-rbw-autotype-xwayland.desktop" rofiRbwXwaylandDesktopEntry;
+  rofiRbwTotpDesktopFile = pkgs.writeText "rofi-rbw-autotype-totp.desktop" rofiRbwTotpDesktopEntry;
 in
 
 {

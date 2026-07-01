@@ -14,7 +14,8 @@ let
     config.xdg.userDirs.download or "${config.home.homeDirectory}/Downloads"
   }/nix";
   xdgDataDirs = "${config.home.homeDirectory}/.nix-profile/share:/nix/var/nix/profiles/default/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share";
-  mkDesktopItemPackage = desktopId: entry:
+  mkDesktopItemPackage =
+    desktopId: entry:
     pkgs.makeDesktopItem {
       name = desktopId;
       desktopName = entry.name;

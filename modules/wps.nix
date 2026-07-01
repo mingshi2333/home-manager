@@ -60,7 +60,8 @@ let
     }
     // pkgs.lib.optionalAttrs (mimeType != null) { inherit mimeType; };
 
-  mkDesktopItemPackage = desktopId: entry:
+  mkDesktopItemPackage =
+    desktopId: entry:
     pkgs.makeDesktopItem {
       name = desktopId;
       desktopName = entry.name;
@@ -205,9 +206,10 @@ in
   config = {
     local.wps.desktopEntries = wpsDesktopEntries;
 
-    home.packages = [ wpsPackage ] ++ map lib.hiPrio (
-      lib.mapAttrsToList mkDesktopItemPackage wpsDesktopEntries
-    );
+    home.packages = [
+      wpsPackage
+    ]
+    ++ map lib.hiPrio (lib.mapAttrsToList mkDesktopItemPackage wpsDesktopEntries);
 
     home.file = {
       ".local/bin/wps" = {

@@ -30,6 +30,14 @@ let
       ./patches/claude-desktop-fhs-git.patch
     ];
   };
+  # NOTE (import-from-derivation): callPackage-ing build files out of the built
+  # `claudeDesktopSrc` derivation forces Nix to realize it during evaluation, so
+  # `nix flake check` / pure offline eval must build it first. A clean IFD-free
+  # fix means vendoring the whole upstream subtree (build.sh + scripts/ + nix/)
+  # with both patches pre-applied — claude-desktop.nix uses `sourceRoot = ./..`
+  # and runs build.sh from it, so vendoring only the nix files does not build.
+  # Deferred: the impact is limited to pure eval (home-manager switch builds it
+  # anyway) and full vendoring adds ongoing maintenance against the pinned rev.
   claudeDesktopNodePty = pkgs.callPackage "${claudeDesktopSrc}/nix/node-pty.nix" { };
   claudeDesktopUnwrapped = pkgs.callPackage "${claudeDesktopSrc}/nix/claude-desktop.nix" {
     node-pty = claudeDesktopNodePty;
